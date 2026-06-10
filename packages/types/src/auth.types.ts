@@ -31,3 +31,12 @@ export type JwtPayload = {
   iat?: number;
   exp?: number;
 };
+
+export type RefreshToken = {
+  id: string;
+  user_id: string;
+  token: string;
+  expires_at: string;
+  revoked?: boolean;
+  created_at?: string;
+};

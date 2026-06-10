@@ -70,4 +70,31 @@ export class AuthRepository {
     }
     return null;
   }
+
+  async saveRefreshToken(userId: string, token: string, expiresAt: Date) {
+    const res = await pool.query(
+      `INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1,$2,$3) RETURNING id, user_id, token, expires_at, revoked, created_at`,
+      [userId, token, expiresAt]
+    );
+    return res.rows[0];
+  }
+
+  async findRefreshToken(token: string) {
+    const res = await pool.query(`SELECT * FROM refresh_tokens WHERE token = $1 LIMIT 1`, [token]);
+    return res.rows[0] ?? null;
+  }
+
+  async revokeRefreshToken(token: string) {
+    await pool.query(`UPDATE refresh_tokens SET revoked = true WHERE token = $1`, [token]);
+  }
+
+  async revokeAllForUser(userId: string) {
+    await pool.query(`UPDATE refresh_tokens SET revoked = true WHERE user_id = $1`, [userId]);
+  }
+
+  async updatePassword(userId: string, newPassword: string) {
+    const salt = crypto.randomBytes(16).toString("hex");
+    const password_hash = hashPassword(newPassword, salt);
+    await pool.query(`UPDATE users SET password_hash = $1, password_salt = $2, updated_at = now() WHERE id = $3`, [password_hash, salt, userId]);
+  }
 }

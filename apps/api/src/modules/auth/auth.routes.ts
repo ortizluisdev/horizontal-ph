@@ -6,6 +6,11 @@ export default async function authRoutes(app: FastifyInstance) {
   app.post("/auth/register", registerHandler);
   app.post("/auth/login", loginHandler);
 
-  // ruta protegida
+  // rutas públicas
+  app.post("/auth/refresh", refreshHandler);
+
+  // rutas protegidas
   app.get("/auth/me", { preHandler: authMiddleware }, meHandler);
+  app.post("/auth/logout", { preHandler: authMiddleware }, logoutHandler);
+  app.patch("/auth/password", { preHandler: authMiddleware }, changePasswordHandler);
 }
