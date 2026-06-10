@@ -1,8 +1,9 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import jwt from "@fastify/jwt";
-import unidadesRoutes from "./modules/unidades/unidades.routes";
-import usuariosRoutes from "./modules/usuarios/usuarios.routes";
+import unidadesRoutes from "./modules/unidades/unidades.controller.js";
+import usuariosRoutes from "./modules/usuarios/usuarios.routes.js";
+import authRoutes from "./modules/auth/auth.routes.js";
 
 const app = Fastify({ logger: false });
 
@@ -10,6 +11,7 @@ await app.register(cors, { origin: true, credentials: true });
 await app.register(jwt, { secret: process.env.JWT_SECRET ?? "secreto_temporal" });
 await app.register(unidadesRoutes);
 await app.register(usuariosRoutes);
+await app.register(authRoutes);
 
 app.get("/health", async () => {
   return {

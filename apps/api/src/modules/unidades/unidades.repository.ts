@@ -1,4 +1,4 @@
-import type { UnidadInput } from "./unidades.schema";
+import type { UnidadInput } from "./unidades.schema.js";
 
 export class UnidadRepository {
   async list() {

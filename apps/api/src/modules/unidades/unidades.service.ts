@@ -1,5 +1,5 @@
-import { UnidadRepository } from "./unidades.repository";
-import type { UnidadInput } from "./unidades.schema";
+import { UnidadRepository } from "./unidades.repository.js";
+import type { UnidadInput } from "./unidades.schema.js";
 
 const repository = new UnidadRepository();
 

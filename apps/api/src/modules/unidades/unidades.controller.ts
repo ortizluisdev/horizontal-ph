@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { unidadSchema } from "./unidades.schema";
-import { UnidadService } from "./unidades.service";
+import { unidadSchema } from "./unidades.schema.js";
+import { UnidadService } from "./unidades.service.js";
 
 const service = new UnidadService();
 
