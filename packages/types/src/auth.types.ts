@@ -10,6 +10,7 @@ export type User = {
   nombre: string;
   email: string;
   role_id?: string | null;
+  role_name?: string | null;
   unidad_id?: string | null;
   created_at?: string;
   updated_at?: string;

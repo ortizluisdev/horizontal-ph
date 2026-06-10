@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { createUsuario, getUsuarios, getUsuarioById } from "./usuarios.controller";
+import { createUsuario, getUsuarios, getUsuarioById } from "./usuarios.controller.js";
 
 export default async function usuariosRoutes(app: FastifyInstance) {
   app.get("/usuarios", getUsuarios);

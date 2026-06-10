@@ -27,7 +27,8 @@ export async function loginHandler(req: FastifyRequest, reply: FastifyReply) {
   if (!user) return reply.code(401).send({ message: "Credenciales inválidas" });
 
   // firmar JWT con sub = user.id
-  const token = await reply.jwtSign({ sub: user.id, email: user.email, role: user.role_id });
+  const roleForToken = (user as any).role_name ?? (user as any).role_id;
+  const token = await reply.jwtSign({ sub: user.id, email: user.email, role: roleForToken });
   return reply.send({ token, user });
 }
 

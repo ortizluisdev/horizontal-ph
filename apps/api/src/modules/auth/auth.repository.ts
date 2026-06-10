@@ -25,18 +25,22 @@ export class AuthRepository {
       if (role) roleId = role.id;
     }
 
-    const res = await pool.query(
+    const insert = await pool.query(
       `INSERT INTO users (nombre, email, password_hash, password_salt, role_id, unidad_id)
-       VALUES ($1,$2,$3,$4,$5,$6) RETURNING id, nombre, email, role_id, unidad_id, created_at, updated_at`,
+       VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
       [input.nombre, input.email, password_hash, salt, roleId, input.unidadId ?? null]
     );
 
-    return res.rows[0] as User;
+    const id = insert.rows[0].id as string;
+    return this.findUserById(id) as Promise<User>;
   }
 
   async findUserByEmail(email: string): Promise<(User & { password_hash?: string; password_salt?: string }) | null> {
     const res = await pool.query(
-      `SELECT id, nombre, email, role_id, unidad_id, password_hash, password_salt, created_at, updated_at FROM users WHERE email = $1 LIMIT 1`,
+      `SELECT u.id, u.nombre, u.email, u.role_id, r.name as role_name, u.unidad_id, u.password_hash, u.password_salt, u.created_at, u.updated_at
+       FROM users u
+       LEFT JOIN auth_roles r ON r.id = u.role_id
+       WHERE u.email = $1 LIMIT 1`,
       [email]
     );
     return res.rows[0] ?? null;
@@ -44,7 +48,10 @@ export class AuthRepository {
 
   async findUserById(id: string): Promise<User | null> {
     const res = await pool.query(
-      `SELECT id, nombre, email, role_id, unidad_id, created_at, updated_at FROM users WHERE id = $1 LIMIT 1`,
+      `SELECT u.id, u.nombre, u.email, u.role_id, r.name as role_name, u.unidad_id, u.created_at, u.updated_at
+       FROM users u
+       LEFT JOIN auth_roles r ON r.id = u.role_id
+       WHERE u.id = $1 LIMIT 1`,
       [id]
     );
     return res.rows[0] ?? null;
