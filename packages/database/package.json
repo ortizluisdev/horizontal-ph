@@ -1,0 +1,7 @@
+{
+  "name": "@horizontal-ph/database",
+  "version": "1.0.0",
+  "scripts": {
+    "migrate": "node migrate.js"
+  }
+}
