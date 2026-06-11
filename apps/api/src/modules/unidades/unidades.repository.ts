@@ -1,16 +1,17 @@
-import type { UnidadInput } from "./unidades.schema.js";
+import type { UnidadInput, Unidad } from "@horizontal-ph/types";
 
 export class UnidadRepository {
-  async list() {
-    return [] as Array<{ id: string; nombre: string; descripcion?: string }>;
+  async list(): Promise<Unidad[]> {
+    return [] as Unidad[];
   }
 
-  async create(data: UnidadInput) {
+  async create(data: UnidadInput): Promise<Unidad> {
     return {
       id: typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
         ? crypto.randomUUID()
         : Date.now().toString(),
-      ...data,
-    };
+      nombre: data.nombre,
+      descripcion: data.descripcion ?? null,
+    } as Unidad;
   }
 }

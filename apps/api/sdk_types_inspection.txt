@@ -1,0 +1,48 @@
+=== interface OpenAIChatSettings ===
+> C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\openai\dist\index.d.ts:5:interface OpenAIChatSettings {
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\openai\dist\index.d.ts:6:    /**
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\openai\dist\index.d.ts:7:  Modify the likelihood of specified tokens appearing in the completion.
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\openai\dist\index.d.ts:8:  
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\openai\dist\index.d.ts:9:  Accepts a JSON object that maps tokens (specified by their token ID in
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\openai\dist\index.d.ts:10:  the GPT tokenizer) to an associated bias value from -100 to 100. You
+=== interface OpenAIEmbeddingSettings ===
+> C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\openai\dist\index.d.ts:154:interface OpenAIEmbeddingSettings {
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\openai\dist\index.d.ts:155:    /**
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\openai\dist\index.d.ts:156:  Override the maximum number of embeddings per call.
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\openai\dist\index.d.ts:157:     */
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\openai\dist\index.d.ts:158:    maxEmbeddingsPerCall?: number;
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\openai\dist\index.d.ts:159:    /**
+=== interface AnthropicMessagesSettings ===
+=== export function createOpenAI ===
+=== export function createAnthropic ===
+=== type OpenAIChatModelId ===
+> C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\openai\dist\index.d.ts:4:type OpenAIChatModelId = 'gpt-4o' | 'gpt-4o-2024-05-13' | 'gpt-4o-2024-08-06' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-turbo-preview' | 'gpt-4-0125-preview' | 'gpt-4-1106-preview' | 'gpt-4' | 'gpt-4-0613' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-1106' | (string & {});
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\openai\dist\index.d.ts:5:interface OpenAIChatSettings {
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\openai\dist\index.d.ts:6:    /**
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\openai\dist\index.d.ts:7:  Modify the likelihood of specified tokens appearing in the completion.
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\openai\dist\index.d.ts:8:  
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\openai\dist\index.d.ts:9:  Accepts a JSON object that maps tokens (specified by their token ID in
+=== type OpenAIEmbeddingModelId ===
+> C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\openai\dist\index.d.ts:153:type OpenAIEmbeddingModelId = 'text-embedding-3-small' | 'text-embedding-3-large' | 'text-embedding-ada-002' | (string & {});
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\openai\dist\index.d.ts:154:interface OpenAIEmbeddingSettings {
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\openai\dist\index.d.ts:155:    /**
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\openai\dist\index.d.ts:156:  Override the maximum number of embeddings per call.
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\openai\dist\index.d.ts:157:     */
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\openai\dist\index.d.ts:158:    maxEmbeddingsPerCall?: number;
+=== type AnthropicMessagesModelId ===
+--- ANTHROPIC ---
+=== interface AnthropicMessagesSettings ===
+> C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\anthropic\dist\index.d.ts:5:interface AnthropicMessagesSettings {
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\anthropic\dist\index.d.ts:6:    /**
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\anthropic\dist\index.d.ts:7:  Only sample from the top K options for each subsequent token.
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\anthropic\dist\index.d.ts:8:  
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\anthropic\dist\index.d.ts:9:  Used to remove "long tail" low probability responses.
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\anthropic\dist\index.d.ts:10:  Recommended for advanced use cases only. You usually only need to use temperature.
+=== type AnthropicMessagesModelId ===
+> C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\anthropic\dist\index.d.ts:4:type AnthropicMessagesModelId = 'claude-3-5-sonnet-20240620' | 'claude-3-opus-20240229' | 'claude-3-sonnet-20240229' | 'claude-3-haiku-20240307' | (string & {});
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\anthropic\dist\index.d.ts:5:interface AnthropicMessagesSettings {
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\anthropic\dist\index.d.ts:6:    /**
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\anthropic\dist\index.d.ts:7:  Only sample from the top K options for each subsequent token.
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\anthropic\dist\index.d.ts:8:  
+  C:\Users\luisa\OneDrive\Documentos\horizontal-ph\apps\api\node_modules\@ai-sdk\anthropic\dist\index.d.ts:9:  Used to remove "long tail" low probability responses.
+=== export function createAnthropic ===

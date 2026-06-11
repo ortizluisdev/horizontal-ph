@@ -1,6 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { UsuarioService } from "./usuarios.service";
-import { usuarioSchema } from "./usuarios.schema";
+import { UsuarioService } from "./usuarios.service.js";
+import { usuarioSchema } from "./usuarios.schema.js";
+import type { NewUserInput, User } from "@horizontal-ph/types";
 
 const service = new UsuarioService();
 
@@ -21,6 +22,12 @@ export async function getUsuarioById(req: FastifyRequest<{ Params: { id: string 
 
 export async function createUsuario(req: CreateUsuarioRequest, reply: FastifyReply) {
   const usuario = usuarioSchema.parse(req.body);
-  const created = await service.create(usuario);
+  const created = await service.create({
+    nombre: usuario.nombre,
+    email: usuario.email,
+    password: usuario.password,
+    roleName: usuario.role,
+    unidadId: usuario.unidadId,
+  });
   return reply.status(201).send(created);
 }

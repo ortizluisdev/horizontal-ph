@@ -1,28 +1,31 @@
-import type { UsuarioInput } from "./usuarios.schema";
+import type { NewUserInput, User } from "@horizontal-ph/types";
 
-interface UsuarioRecord extends UsuarioInput {
-  id: string;
-}
+export interface UsuarioRecord extends User {}
 
 const usuarios: UsuarioRecord[] = [];
 
 export class UsuarioRepository {
-  async list() {
+  async list(): Promise<UsuarioRecord[]> {
     return usuarios;
   }
 
-  async findById(id: string) {
+  async findById(id: string): Promise<UsuarioRecord | undefined> {
     return usuarios.find((usuario) => usuario.id === id);
   }
 
-  async create(data: UsuarioInput) {
+  async create(data: NewUserInput): Promise<UsuarioRecord> {
     const record: UsuarioRecord = {
       id: typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
         ? crypto.randomUUID()
         : Date.now().toString(),
-      ...data,
-    };
-
+      nombre: data.nombre,
+      email: data.email,
+      role_id: undefined,
+      role_name: data.roleName ?? null,
+      unidad_id: data.unidadId ?? null,
+      created_at: new Date(),
+      updated_at: new Date(),
+    } as UsuarioRecord;
     usuarios.push(record);
     return record;
   }

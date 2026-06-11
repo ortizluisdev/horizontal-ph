@@ -1,4 +1,4 @@
-import { AuthRepository } from "./auth.repository";
+import { AuthRepository } from "./auth.repository.js";
 import type { NewUserInput, User } from "@horizontal-ph/types";
 import crypto from "crypto";
 

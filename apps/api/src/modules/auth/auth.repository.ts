@@ -1,4 +1,4 @@
-import { pool } from "../../core/database/pg.client";
+import { pool } from "../../core/database/pg.client.js";
 import type { NewUserInput, User, Role } from "@horizontal-ph/types";
 import crypto from "crypto";
 

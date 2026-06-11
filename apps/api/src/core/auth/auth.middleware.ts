@@ -1,5 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { AuthService } from "../../modules/auth/auth.service";
+import { AuthService } from "../../modules/auth/auth.service.js";
 
 const service = new AuthService();
 

@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify";
-import { registerHandler, loginHandler, meHandler } from "./auth.controller";
-import authMiddleware from "../../core/auth/auth.middleware";
+import { registerHandler, loginHandler, meHandler, refreshHandler, logoutHandler, changePasswordHandler } from "./auth.controller.js";
+import authMiddleware from "../../core/auth/auth.middleware.js";
 
 export default async function authRoutes(app: FastifyInstance) {
   app.post("/auth/register", registerHandler);

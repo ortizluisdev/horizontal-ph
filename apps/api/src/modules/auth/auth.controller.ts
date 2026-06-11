@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { AuthService } from "./auth.service";
-import { registerSchema, loginSchema } from "./auth.schema";
+import { AuthService } from "./auth.service.js";
+import { registerSchema, loginSchema } from "./auth.schema.js";
 
 const service = new AuthService();
 
