@@ -7,6 +7,10 @@ export const registerSchema = z.object({
   tenantId: z.string().uuid(),
   unidadId: z.string().uuid().optional(),
   roleName: z.string().optional(),
+  tipoUsuario: z.enum([
+    'propietario', 'inquilino', 'administrador',
+    'vigilante', 'celadora', 'aseadora', 'otro'
+  ]).optional(),
 });
 
 export const loginSchema = z.object({

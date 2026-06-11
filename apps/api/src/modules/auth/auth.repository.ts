@@ -10,7 +10,7 @@ function hashPassword(password: string, salt: string) {
 
 export class AuthRepository {
   async findRoleByName(name: string): Promise<Role | null> {
-    const res = await pool.query("SELECT * FROM auth_roles WHERE name = $1 LIMIT 1", [name]);
+    const res = await pool.query("SELECT * FROM auth_roles WHERE nombre = $1 LIMIT 1", [name]);
     return res.rows[0] ?? null;
   }
 
@@ -25,9 +25,18 @@ export class AuthRepository {
     }
 
     const insert = await pool.query(
-      `INSERT INTO users (nombre, email, password_hash, password_salt, role_id, unidad_id, tenant_id)
-       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
-      [input.nombre, input.email, password_hash, salt, roleId, input.unidadId ?? null, (input as any).tenantId ?? null]
+      `INSERT INTO users (nombre, email, password_hash, password_salt, role_id, unidad_id, tenant_id, tipo_usuario)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+      [
+        input.nombre,
+        input.email,
+        password_hash,
+        salt,
+        roleId,
+        input.unidadId ?? null,
+        (input as any).tenantId ?? null,
+        (input as any).tipoUsuario ?? 'administrador',
+      ]
     );
 
     const id = insert.rows[0].id as string;
@@ -36,7 +45,7 @@ export class AuthRepository {
 
   async findUserByEmail(email: string): Promise<(User & { password_hash?: string; password_salt?: string }) | null> {
     const res = await pool.query(
-      `SELECT u.id, u.nombre, u.email, u.role_id, r.name as role_name, u.unidad_id, u.password_hash, u.password_salt, u.created_at, u.updated_at
+      `SELECT u.id, u.nombre, u.email, u.role_id, r.nombre as role_name, u.unidad_id, u.password_hash, u.password_salt, u.created_at, u.updated_at
        FROM users u
        LEFT JOIN auth_roles r ON r.id = u.role_id
        WHERE u.email = $1 LIMIT 1`,
@@ -47,7 +56,7 @@ export class AuthRepository {
 
   async findUserById(id: string): Promise<User | null> {
     const res = await pool.query(
-      `SELECT u.id, u.nombre, u.email, u.role_id, r.name as role_name, u.unidad_id, u.created_at, u.updated_at
+      `SELECT u.id, u.nombre, u.email, u.role_id, r.nombre as role_name, u.unidad_id, u.created_at, u.updated_at
        FROM users u
        LEFT JOIN auth_roles r ON r.id = u.role_id
        WHERE u.id = $1 LIMIT 1`,
@@ -63,7 +72,6 @@ export class AuthRepository {
     const hash = (row as any).password_hash as string;
     const candidate = hashPassword(password, salt);
     if (candidate === hash) {
-      // return user without sensitive fields
       const { password_hash, password_salt, ...user } = row as any;
       return user as User;
     }
@@ -94,6 +102,9 @@ export class AuthRepository {
   async updatePassword(userId: string, newPassword: string) {
     const salt = crypto.randomBytes(16).toString("hex");
     const password_hash = hashPassword(newPassword, salt);
-    await pool.query(`UPDATE users SET password_hash = $1, password_salt = $2, updated_at = now() WHERE id = $3`, [password_hash, salt, userId]);
+    await pool.query(
+      `UPDATE users SET password_hash = $1, password_salt = $2, updated_at = now() WHERE id = $3`,
+      [password_hash, salt, userId]
+    );
   }
 }

@@ -14,6 +14,7 @@ export async function registerHandler(req: FastifyRequest, reply: FastifyReply) 
       tenantId: payload.tenantId,
       roleName: payload.roleName,
       unidadId: payload.unidadId ?? null,
+      tipoUsuario: payload.tipoUsuario ?? 'administrador',
     } as any);
     return reply.code(201).send(user);
   } catch (err) {
