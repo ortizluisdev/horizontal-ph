@@ -8,6 +8,10 @@ function hashPassword(password: string, salt: string) {
     .toString("hex");
 }
 
+function hashToken(token: string): string {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
 export class AuthRepository {
   async findRoleByName(name: string): Promise<Role | null> {
     const res = await pool.query("SELECT * FROM auth_roles WHERE nombre = $1 LIMIT 1", [name]);
@@ -24,23 +28,32 @@ export class AuthRepository {
       if (role) roleId = role.id;
     }
 
-    const insert = await pool.query(
-      `INSERT INTO users (nombre, email, password_hash, password_salt, role_id, unidad_id, tenant_id, tipo_usuario)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
-      [
-        input.nombre,
-        input.email,
-        password_hash,
-        salt,
-        roleId,
-        input.unidadId ?? null,
-        (input as any).tenantId ?? null,
-        (input as any).tipoUsuario ?? 'administrador',
-      ]
-    );
+    try {
+      const insert = await pool.query(
+        `INSERT INTO users (nombre, email, password_hash, password_salt, role_id, unidad_id, tenant_id, tipo_usuario)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+        [
+          input.nombre,
+          input.email,
+          password_hash,
+          salt,
+          roleId,
+          input.unidadId ?? null,
+          (input as any).tenantId ?? null,
+          (input as any).tipoUsuario ?? "administrador",
+        ]
+      );
 
-    const id = insert.rows[0].id as string;
-    return this.findUserById(id) as Promise<User>;
+      const id = insert.rows[0].id as string;
+      return this.findUserById(id) as Promise<User>;
+    } catch (err: any) {
+      if (err.code === "23505") {
+        throw Object.assign(new Error("El email ya está registrado para este tenant"), {
+          statusCode: 409,
+        });
+      }
+      throw err;
+    }
   }
 
   async findUserByEmail(email: string): Promise<(User & { password_hash?: string; password_salt?: string }) | null> {
@@ -79,24 +92,38 @@ export class AuthRepository {
   }
 
   async saveRefreshToken(userId: string, token: string, expiresAt: Date) {
+    const token_hash = hashToken(token);
     const res = await pool.query(
-      `INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1,$2,$3) RETURNING id, user_id, token, expires_at, revoked, created_at`,
-      [userId, token, expiresAt]
+      `INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
+       VALUES ($1, $2, $3)
+       RETURNING id, user_id, token_hash, expires_at, revoked, created_at`,
+      [userId, token_hash, expiresAt]
     );
     return res.rows[0];
   }
 
   async findRefreshToken(token: string) {
-    const res = await pool.query(`SELECT * FROM refresh_tokens WHERE token = $1 LIMIT 1`, [token]);
+    const token_hash = hashToken(token);
+    const res = await pool.query(
+      `SELECT * FROM refresh_tokens WHERE token_hash = $1 LIMIT 1`,
+      [token_hash]
+    );
     return res.rows[0] ?? null;
   }
 
   async revokeRefreshToken(token: string) {
-    await pool.query(`UPDATE refresh_tokens SET revoked = true WHERE token = $1`, [token]);
+    const token_hash = hashToken(token);
+    await pool.query(
+      `UPDATE refresh_tokens SET revoked = true WHERE token_hash = $1`,
+      [token_hash]
+    );
   }
 
   async revokeAllForUser(userId: string) {
-    await pool.query(`UPDATE refresh_tokens SET revoked = true WHERE user_id = $1`, [userId]);
+    await pool.query(
+      `UPDATE refresh_tokens SET revoked = true WHERE user_id = $1`,
+      [userId]
+    );
   }
 
   async updatePassword(userId: string, newPassword: string) {

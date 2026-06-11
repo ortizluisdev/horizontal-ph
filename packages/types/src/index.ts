@@ -147,11 +147,47 @@ export interface NormativaInput {
 
 export interface Unidad {
   id: string;
+  conjunto_id: string;
   nombre: string;
-  descripcion?: string | null;
+  numero_unidad: string;
+  torre?: string | null;
+  piso?: number | null;
+  tipo: string;
+  area_m2?: number | null;
+  area_privada_m2?: number | null;
+  area_comun_m2?: number | null;
+  numero_habitaciones?: number | null;
+  numero_banos?: number | null;
+  tiene_parqueadero?: boolean;
+  numero_parqueaderos?: number;
+  tiene_bodega?: boolean;
+  matricula_inmobiliaria?: string | null;
+  chip_agua?: string | null;
+  chip_gas?: string | null;
+  chip_energia?: string | null;
+  uso?: string | null;
+  estado?: string;
+  activo?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface UnidadInput {
+  conjunto_id: string;
   nombre: string;
-  descripcion?: string | null;
+  numero_unidad: string;
+  torre?: string | null;
+  piso?: number | null;
+  tipo: string;
+  area_m2?: number | null;
+  area_privada_m2?: number | null;
+  area_comun_m2?: number | null;
+  numero_habitaciones?: number | null;
+  numero_banos?: number | null;
+  tiene_parqueadero?: boolean;
+  numero_parqueaderos?: number;
+  tiene_bodega?: boolean;
+  uso?: string | null;
+  estado?: string;
+  activo?: boolean;
 }
