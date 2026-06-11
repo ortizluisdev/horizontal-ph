@@ -11,10 +11,10 @@ export async function registerHandler(req: FastifyRequest, reply: FastifyReply) 
       nombre: payload.nombre,
       email: payload.email,
       password: payload.password,
+      tenantId: payload.tenantId,
       roleName: payload.roleName,
       unidadId: payload.unidadId ?? null,
-    });
-
+    } as any);
     return reply.code(201).send(user);
   } catch (err) {
     return reply.code(400).send({ message: "Error creando usuario", detail: (err as any).message });

@@ -18,7 +18,6 @@ export class AuthRepository {
     const salt = crypto.randomBytes(16).toString("hex");
     const password_hash = hashPassword(input.password, salt);
 
-    // buscar role por nombre si viene
     let roleId: string | null = null;
     if (input.roleName) {
       const role = await this.findRoleByName(input.roleName);
@@ -26,9 +25,9 @@ export class AuthRepository {
     }
 
     const insert = await pool.query(
-      `INSERT INTO users (nombre, email, password_hash, password_salt, role_id, unidad_id)
-       VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
-      [input.nombre, input.email, password_hash, salt, roleId, input.unidadId ?? null]
+      `INSERT INTO users (nombre, email, password_hash, password_salt, role_id, unidad_id, tenant_id)
+       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
+      [input.nombre, input.email, password_hash, salt, roleId, input.unidadId ?? null, (input as any).tenantId ?? null]
     );
 
     const id = insert.rows[0].id as string;
