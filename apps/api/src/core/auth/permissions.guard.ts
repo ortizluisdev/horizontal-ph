@@ -1,17 +1,47 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 
+// ─── Guard de roles ───────────────────────────────────────────────────────────
+// Uso: preHandler: [authMiddleware, permitRoles("administrador", "gerente")]
+
 export function permitRoles(...allowed: string[]) {
-	return async function (req: FastifyRequest, reply: FastifyReply) {
-		const anyReq: any = req;
-		const user = anyReq.user;
-		if (!user) return reply.code(401).send({ message: "No autenticado" });
-		// `user.role_id` contiene el id del role; si se desea comparar por nombre, se podría cargar role
-		// En nuestro modelo inicial guardamos role_id; para simplificar, permitimos pasar nombres de roles
-		// y también aceptamos comparar contra `user.role_name` si se hubiera adjuntado.
-		const roleName = (user as any).role_name || (user as any).role || null;
-		if (!roleName) return reply.code(403).send({ message: "Rol no asignado" });
-		if (!allowed.includes(roleName)) return reply.code(403).send({ message: "Permiso denegado" });
-	};
+  return async function (req: FastifyRequest, reply: FastifyReply) {
+    const user = (req as any).user;
+
+    if (!user) {
+      return reply.code(401).send({ error: "UNAUTHORIZED", message: "No autenticado" });
+    }
+
+    const roleName: string | null = user.role_name ?? user.role ?? null;
+
+    if (!roleName) {
+      return reply.code(403).send({ error: "FORBIDDEN", message: "Rol no asignado" });
+    }
+
+    if (!allowed.includes(roleName)) {
+      return reply.code(403).send({
+        error:   "FORBIDDEN",
+        message: `Acceso denegado. Se requiere uno de: ${allowed.join(", ")}`,
+      });
+    }
+  };
+}
+
+// ─── Guard por nivel de acceso ────────────────────────────────────────────────
+// Uso: preHandler: [authMiddleware, requireAccessLevel(2)]
+// Niveles: 0=basic, 1=staff, 2=admin, 3=super-admin
+
+export function requireAccessLevel(minLevel: number) {
+  return async function (req: FastifyRequest, reply: FastifyReply) {
+    const user  = (req as any).user;
+    const level = user?.nivel_acceso ?? 0;
+
+    if (level < minLevel) {
+      return reply.code(403).send({
+        error:   "FORBIDDEN",
+        message: `Se requiere nivel de acceso ${minLevel} o superior`,
+      });
+    }
+  };
 }
 
 export default permitRoles;
