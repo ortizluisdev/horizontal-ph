@@ -1,3 +1,5 @@
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
 export type TipoUsuario =
   | 'propietario'
   | 'inquilino'
@@ -7,13 +9,15 @@ export type TipoUsuario =
   | 'aseadora'
   | 'otro'
 
-export interface AuthUser {
+// ─── Entidades ────────────────────────────────────────────────────────────────
+
+export interface User {
   id: string
   nombre: string
   email: string
-  role_id: string
-  role_name: string
-  unidad_id?: string
+  role_id: string | null
+  role_name: string | null
+  unidad_id: string | null
   tenant_id: string
   tipo_usuario: TipoUsuario
   activo: boolean
@@ -21,12 +25,19 @@ export interface AuthUser {
   updated_at: string
 }
 
-export interface LoginInput {
+export interface RefreshTokenPayload {
+  token: string
+  expiresAt: string
+}
+
+// ─── Request payloads ─────────────────────────────────────────────────────────
+
+export interface LoginPayload {
   email: string
   password: string
 }
 
-export interface RegisterInput {
+export interface RegisterPayload {
   nombre: string
   email: string
   password: string
@@ -36,18 +47,42 @@ export interface RegisterInput {
   tipoUsuario?: TipoUsuario
 }
 
-export interface RefreshToken {
-  token: string
-  expiresAt: string
+export interface ForgotPasswordPayload {
+  email: string
 }
+
+export interface ResetPasswordPayload {
+  token: string
+  newPassword: string
+}
+
+export interface ChangePasswordPayload {
+  currentPassword: string
+  newPassword: string
+}
+
+// ─── Response shapes ──────────────────────────────────────────────────────────
 
 export interface LoginResponse {
   token: string
-  refresh: RefreshToken
-  user: AuthUser
+  refresh: RefreshTokenPayload
+  user: User
 }
 
-export interface ChangePasswordInput {
-  currentPassword: string
-  newPassword: string
+export interface RefreshResponse {
+  token: string
+  refresh: RefreshTokenPayload
+}
+
+// ─── Form state ───────────────────────────────────────────────────────────────
+
+export interface FieldError {
+  field: string
+  message: string
+}
+
+export interface AuthFormState {
+  loading: boolean
+  error: string | null
+  fieldErrors: FieldError[]
 }

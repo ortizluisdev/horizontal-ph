@@ -1,37 +1,63 @@
 import http from '@/shared/lib/http'
 import type {
-  LoginInput,
+  LoginPayload,
   LoginResponse,
-  RegisterInput,
-  AuthUser,
-  ChangePasswordInput,
+  RegisterPayload,
+  RefreshResponse,
+  User,
+  ChangePasswordPayload,
 } from '../types/auth.types'
 
+const BASE = '/auth'
+
 export const authApi = {
-  login(body: LoginInput) {
-    return http.post<LoginResponse>('/auth/login', body)
+  /**
+   * POST /auth/login
+   * Retorna token JWT, refresh token y datos del usuario
+   */
+  login(payload: LoginPayload): Promise<LoginResponse> {
+    return http.post<LoginResponse>(`${BASE}/login`, payload).then((r) => r.data)
   },
 
-  register(body: RegisterInput) {
-    return http.post<AuthUser>('/auth/register', body)
+  /**
+   * POST /auth/register
+   * Crea un nuevo usuario en el tenant indicado
+   */
+  register(payload: RegisterPayload): Promise<User> {
+    return http.post<User>(`${BASE}/register`, payload).then((r) => r.data)
   },
 
-  me() {
-    return http.get<AuthUser>('/auth/me')
+  /**
+   * GET /auth/me
+   * Devuelve el perfil del usuario autenticado (requiere Bearer)
+   */
+  me(): Promise<User> {
+    return http.get<User>(`${BASE}/me`).then((r) => r.data)
   },
 
-  logout(refreshToken?: string) {
-    return http.post<{ ok: boolean }>('/auth/logout', { refreshToken })
+  /**
+   * POST /auth/refresh
+   * Rota el refresh token y devuelve nuevos tokens
+   */
+  refresh(refreshToken: string): Promise<RefreshResponse> {
+    return http
+      .post<RefreshResponse>(`${BASE}/refresh`, { refreshToken })
+      .then((r) => r.data)
   },
 
-  refresh(refreshToken: string) {
-    return http.post<{ token: string; refresh: { token: string; expiresAt: string } }>(
-      '/auth/refresh',
-      { refreshToken }
-    )
+  /**
+   * POST /auth/logout
+   * Revoca el refresh token en el servidor
+   */
+  logout(refreshToken?: string): Promise<void> {
+    return http.post(`${BASE}/logout`, { refreshToken }).then(() => undefined)
   },
 
-  changePassword(body: ChangePasswordInput) {
-    return http.patch<{ ok: boolean }>('/auth/password', body)
+  /**
+   * PATCH /auth/password
+   * Cambia la contraseña del usuario autenticado
+   */
+  changePassword(payload: ChangePasswordPayload): Promise<void> {
+    return http.patch(`${BASE}/password`, payload).then(() => undefined)
   },
 }

@@ -1,48 +1,84 @@
-import type { PaginationParams } from '@/shared/types'
+// ─── Enums ────────────────────────────────────────────────────────────────────
 
-export type EstadoCobranza = 'pendiente' | 'pagado' | 'vencido' | 'anulado'
-export type TipoCobranza = 'cuota_administracion' | 'multa' | 'parqueadero' | 'otro'
+export type EstadoCobranza = 'pendiente' | 'pagada' | 'vencida' | 'anulada' | 'en_mora'
+
+export type MetodoPago = 'efectivo' | 'transferencia' | 'tarjeta' | 'cheque' | 'otro'
+
+// ─── Entidad principal ────────────────────────────────────────────────────────
 
 export interface Cobranza {
   id: string
-  tenant_id: string
   unidad_id: string
+  conjunto_id: string
+  numero_recibo: string
   concepto: string
-  tipo: TipoCobranza
-  monto: number
-  estado: EstadoCobranza
-  fecha_emision: string
+  descripcion?: string
+  valor_base?: number
+  valor_impuesto?: number
+  valor_total: number
+  valor_pagado?: number
+  valor_deuda?: number
+  mes_facturacion?: number
+  anio_facturacion?: number
+  fecha_emision?: string
   fecha_vencimiento: string
-  fecha_pago?: string
-  observaciones?: string
+  fecha_pago?: string | null
+  metodo_pago?: MetodoPago | null
+  estado: EstadoCobranza
+  referencia_pago?: string | null
+  observaciones?: string | null
+  activo?: boolean
   created_at: string
   updated_at: string
 }
 
-export interface CobranzaCreateInput {
-  unidad_id: string
+// ─── Paginated response ───────────────────────────────────────────────────────
+
+export interface PaginatedCobranzas {
+  data: Cobranza[]
+  total: number
+  page: number
+  limit: number
+  pages: number
+}
+
+// ─── Request payloads ─────────────────────────────────────────────────────────
+
+export interface CobranzaCreatePayload {
+  unidadId: string
+  conjuntoId: string
+  numero_recibo: string
   concepto: string
-  tipo: TipoCobranza
-  monto: number
-  fecha_emision: string
-  fecha_vencimiento: string
-  observaciones?: string
+  valor_total: number
+  fecha_vencimiento: string // YYYY-MM-DD
 }
 
-export interface CobranzaUpdateInput {
+export interface CobranzaUpdatePayload {
   concepto?: string
-  tipo?: TipoCobranza
-  monto?: number
-  estado?: EstadoCobranza
+  valor_total?: number
   fecha_vencimiento?: string
-  fecha_pago?: string
-  observaciones?: string
+  estado?: EstadoCobranza
 }
 
-export interface CobranzaQuery extends PaginationParams {
-  unidad_id?: string
-  estado?: EstadoCobranza
-  tipo?: TipoCobranza
-  fecha_desde?: string
-  fecha_hasta?: string
+// ─── Query filters ────────────────────────────────────────────────────────────
+
+export interface CobranzaFilters {
+  page?: number
+  limit?: number
+  conjuntoId?: string
+  unidadId?: string
+  estado?: EstadoCobranza | ''
+  fechaDesde?: string
+  fechaHasta?: string
+}
+
+// ─── Resumen de deuda ─────────────────────────────────────────────────────────
+
+export interface ResumenDeuda {
+  total_pendiente: number
+  total_vencido: number
+  total_mora: number
+  total_pagado_mes: number
+  cantidad_pendientes: number
+  cantidad_vencidas: number
 }
