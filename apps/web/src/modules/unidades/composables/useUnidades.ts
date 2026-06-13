@@ -1,15 +1,15 @@
-import { useUnidadesStore } from '../store/unidades.store'
 import { ref } from 'vue'
+import { useUnidadesStore } from '../store/unidades.store'
 import type { UnidadCreateInput, UnidadUpdateInput, UnidadQuery } from '../types/unidades.types'
 
 export function useUnidades() {
-  const store = useUnidadesStore()
+  const store   = useUnidadesStore()
   const loading = ref(false)
-  const error = ref<string | null>(null)
+  const error   = ref<string | null>(null)
 
   async function cargarLista(params?: UnidadQuery) {
     loading.value = true
-    error.value = null
+    error.value   = null
     try {
       await store.fetchList(params)
     } catch (e: any) {
@@ -21,11 +21,23 @@ export function useUnidades() {
 
   async function cargarPorConjunto(conjuntoId: string, params?: UnidadQuery) {
     loading.value = true
-    error.value = null
+    error.value   = null
     try {
       await store.fetchByConjunto(conjuntoId, params)
     } catch (e: any) {
-      error.value = e.response?.data?.message ?? 'Error'
+      error.value = e.response?.data?.message ?? 'Error al cargar unidades'
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function cargarPorId(id: string) {
+    loading.value = true
+    error.value   = null
+    try {
+      await store.fetchById(id)
+    } catch (e: any) {
+      error.value = e.response?.data?.message ?? 'Error al cargar unidad'
     } finally {
       loading.value = false
     }
@@ -33,7 +45,7 @@ export function useUnidades() {
 
   async function crear(input: UnidadCreateInput) {
     loading.value = true
-    error.value = null
+    error.value   = null
     try {
       return await store.create(input)
     } catch (e: any) {
@@ -45,7 +57,7 @@ export function useUnidades() {
 
   async function actualizar(id: string, input: UnidadUpdateInput) {
     loading.value = true
-    error.value = null
+    error.value   = null
     try {
       return await store.update(id, input)
     } catch (e: any) {
@@ -57,7 +69,7 @@ export function useUnidades() {
 
   async function eliminar(id: string) {
     loading.value = true
-    error.value = null
+    error.value   = null
     try {
       await store.remove(id)
     } catch (e: any) {
@@ -68,13 +80,14 @@ export function useUnidades() {
   }
 
   return {
-    list: store.list,
+    list:    store.list,
     current: store.current,
-    total: store.total,
+    total:   store.total,
     loading,
     error,
     cargarLista,
     cargarPorConjunto,
+    cargarPorId,
     crear,
     actualizar,
     eliminar,
