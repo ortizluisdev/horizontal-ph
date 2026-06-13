@@ -1,16 +1,5 @@
-export type TipoAsamblea =
-  | 'ordinaria'
-  | 'extraordinaria'
-  | 'de_propietarios'
-  | 'de_consejo'
-  | 'otra'
-
-export type EstadoAsamblea =
-  | 'programada'
-  | 'en_curso'
-  | 'realizada'
-  | 'cancelada'
-  | 'pospuesta'
+export type TipoAsamblea   = 'ordinaria' | 'extraordinaria' | 'de_propietarios' | 'de_consejo' | 'otra'
+export type EstadoAsamblea = 'programada' | 'en_curso' | 'realizada' | 'cancelada' | 'pospuesta'
 
 export interface Asamblea {
   id: string
@@ -19,15 +8,23 @@ export interface Asamblea {
   tipo: TipoAsamblea
   asunto: string
   fecha_programada: string
-  lugar?: string
-  quorum_requerido?: number
+  lugar?: string | null
+  quorum_requerido?: number | null
   estado: EstadoAsamblea
-  notas?: string
+  notas?: string | null
   created_at: string
   updated_at: string
 }
 
-export interface AsambleaCreateInput {
+export interface PaginatedAsambleas {
+  data: Asamblea[]
+  total: number
+  page: number
+  limit: number
+  pages: number
+}
+
+export interface AsambleaCreatePayload {
   conjuntoId: string
   numero_acta: string
   tipo: TipoAsamblea
@@ -38,7 +35,7 @@ export interface AsambleaCreateInput {
   notas?: string
 }
 
-export interface AsambleaUpdateInput {
+export interface AsambleaUpdatePayload {
   numero_acta?: string
   tipo?: TipoAsamblea
   asunto?: string
@@ -49,12 +46,12 @@ export interface AsambleaUpdateInput {
   estado?: EstadoAsamblea
 }
 
-export interface AsambleaQuery {
+export interface AsambleaFilters {
   page?: number
   limit?: number
   conjuntoId?: string
-  tipo?: TipoAsamblea
-  estado?: EstadoAsamblea
+  tipo?: TipoAsamblea | ''
+  estado?: EstadoAsamblea | ''
   fechaDesde?: string
   fechaHasta?: string
 }

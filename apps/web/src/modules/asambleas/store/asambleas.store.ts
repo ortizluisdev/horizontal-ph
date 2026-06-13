@@ -1,64 +1,123 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { asambleasApi } from '../api/asambleas.api'
-import type { Asamblea, AsambleaCreateInput, AsambleaUpdateInput, AsambleaQuery } from '../types/asambleas.types'
+import type {
+  Asamblea,
+  AsambleaCreatePayload,
+  AsambleaUpdatePayload,
+  AsambleaFilters,
+  PaginatedAsambleas,
+} from '../types/asambleas.types'
 
 export const useAsambleasStore = defineStore('asambleas', () => {
-  const asambleas = ref<Asamblea[]>([])
+  const items   = ref<Asamblea[]>([])
   const current = ref<Asamblea | null>(null)
-  const total = ref(0)
-  const page = ref(1)
-  const limit = ref(20)
+  const total   = ref(0)
+  const page    = ref(1)
+  const pages   = ref(1)
+  const limit   = ref(20)
   const loading = ref(false)
-  const error = ref<string | null>(null)
+  const saving  = ref(false)
+  const error   = ref<string | null>(null)
+  const filters = ref<AsambleaFilters>({ page: 1, limit: 20 })
 
-  async function fetchList(query?: AsambleaQuery) {
+  const programadas  = computed(() => items.value.filter((a) => a.estado === 'programada').length)
+  const enCurso      = computed(() => items.value.filter((a) => a.estado === 'en_curso').length)
+  const proximas     = computed(() =>
+    [...items.value]
+      .filter((a) => a.estado === 'programada' && new Date(a.fecha_programada) > new Date())
+      .sort((a, b) => new Date(a.fecha_programada).getTime() - new Date(b.fecha_programada).getTime())
+      .slice(0, 3)
+  )
+
+  async function fetchList(f: AsambleaFilters = {}) {
     loading.value = true
-    error.value = null
+    error.value   = null
     try {
-      const { data } = await asambleasApi.list(query)
-      asambleas.value = data.data
-      total.value = data.total
-      page.value = data.page
-      limit.value = data.limit
+      filters.value = { ...filters.value, ...f, page: f.page ?? 1 }
+      const res: PaginatedAsambleas = await asambleasApi.list(filters.value)
+      items.value = res.data
+      total.value = res.total
+      page.value  = res.page
+      pages.value = res.pages
+      limit.value = res.limit
     } catch (e: any) {
-      error.value = e.response?.data?.message ?? 'Error al cargar asambleas'
+      error.value = e?.response?.data?.message ?? 'Error al cargar asambleas'
     } finally {
       loading.value = false
     }
   }
 
-  async function fetchById(id: string) {
+  async function fetchOne(id: string) {
     loading.value = true
-    error.value = null
+    error.value   = null
     try {
-      const { data } = await asambleasApi.getById(id)
-      current.value = data
+      current.value = await asambleasApi.getById(id)
     } catch (e: any) {
-      error.value = e.response?.data?.message ?? 'Asamblea no encontrada'
+      error.value   = e?.response?.data?.message ?? 'Asamblea no encontrada'
+      current.value = null
     } finally {
       loading.value = false
     }
   }
 
-  async function create(input: AsambleaCreateInput): Promise<Asamblea> {
-    const { data } = await asambleasApi.create(input)
-    asambleas.value.unshift(data)
-    return data
+  async function create(payload: AsambleaCreatePayload): Promise<Asamblea> {
+    saving.value = true
+    error.value  = null
+    try {
+      const nueva = await asambleasApi.create(payload)
+      items.value.unshift(nueva)
+      total.value++
+      return nueva
+    } catch (e: any) {
+      error.value = e?.response?.data?.message ?? 'Error al crear asamblea'
+      throw e
+    } finally {
+      saving.value = false
+    }
   }
 
-  async function update(id: string, input: AsambleaUpdateInput): Promise<Asamblea> {
-    const { data } = await asambleasApi.update(id, input)
-    const idx = asambleas.value.findIndex(a => a.id === id)
-    if (idx !== -1) asambleas.value[idx] = data
-    if (current.value?.id === id) current.value = data
-    return data
+  async function update(id: string, payload: AsambleaUpdatePayload): Promise<Asamblea> {
+    saving.value = true
+    error.value  = null
+    try {
+      const updated = await asambleasApi.update(id, payload)
+      const idx = items.value.findIndex((a) => a.id === id)
+      if (idx !== -1) items.value[idx] = updated
+      if (current.value?.id === id) current.value = updated
+      return updated
+    } catch (e: any) {
+      error.value = e?.response?.data?.message ?? 'Error al actualizar asamblea'
+      throw e
+    } finally {
+      saving.value = false
+    }
   }
 
   async function remove(id: string) {
-    await asambleasApi.remove(id)
-    asambleas.value = asambleas.value.filter(a => a.id !== id)
+    saving.value = true
+    error.value  = null
+    try {
+      await asambleasApi.remove(id)
+      items.value = items.value.filter((a) => a.id !== id)
+      total.value = Math.max(0, total.value - 1)
+    } catch (e: any) {
+      error.value = e?.response?.data?.message ?? 'Error al eliminar asamblea'
+      throw e
+    } finally {
+      saving.value = false
+    }
   }
 
-  return { asambleas, current, total, page, limit, loading, error, fetchList, fetchById, create, update, remove }
+  function changePage(p: number) { fetchList({ ...filters.value, page: p }) }
+  function applyFilters(f: AsambleaFilters) { fetchList({ ...f, page: 1 }) }
+  function clearError() { error.value = null }
+  function clearCurrent() { current.value = null }
+
+  return {
+    items, current, total, page, pages, limit, loading, saving, error, filters,
+    programadas, enCurso, proximas,
+    fetchList, fetchOne, create, update, remove,
+    changePage, applyFilters, clearError, clearCurrent,
+  }
 })

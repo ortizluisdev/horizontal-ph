@@ -1,211 +1,200 @@
 <template>
-  <div class="max-w-2xl mx-auto p-6">
-    <RouterLink to="/asambleas" class="text-sm text-blue-600 hover:underline block mb-2">
-      ← Asambleas
-    </RouterLink>
-    <h1 class="text-xl font-bold text-slate-800 mb-6">
-      {{ esEdicion ? 'Editar asamblea' : 'Nueva asamblea' }}
-    </h1>
+  <div class="max-w-2xl mx-auto space-y-5">
+    <!-- Back -->
+    <button class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 group" @click="router.back()">
+      <svg class="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+      </svg>
+      Volver
+    </button>
 
-    <form
-      class="bg-white border border-slate-200 rounded-lg p-6 grid grid-cols-1 sm:grid-cols-2 gap-5"
-      @submit.prevent="submit"
-    >
-      <!-- Número de acta -->
-      <div class="flex flex-col gap-1">
-        <label class="text-xs font-semibold text-slate-600">Número de acta *</label>
-        <input
-          v-model="form.numero_acta"
-          type="text"
-          placeholder="Ej: 001-2025"
-          required
-          class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+    <!-- Card formulario -->
+    <div class="rounded-xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-6 py-5 border-b border-gray-100">
+        <h1 class="text-lg font-bold text-gray-900">{{ esEdicion ? 'Editar asamblea' : 'Nueva asamblea' }}</h1>
+        <p class="text-sm text-gray-500 mt-0.5">{{ esEdicion ? 'Modifica los datos de la asamblea' : 'Programa una nueva asamblea para el conjunto' }}</p>
       </div>
 
-      <!-- Tipo -->
-      <div class="flex flex-col gap-1">
-        <label class="text-xs font-semibold text-slate-600">Tipo *</label>
-        <select
-          v-model="form.tipo"
-          required
-          class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">Seleccionar tipo</option>
-          <option value="ordinaria">Ordinaria</option>
-          <option value="extraordinaria">Extraordinaria</option>
-          <option value="de_propietarios">De propietarios</option>
-          <option value="de_consejo">De consejo</option>
-          <option value="otra">Otra</option>
-        </select>
-      </div>
+      <form @submit.prevent="handleSubmit" novalidate class="p-6 space-y-5">
+        <!-- Tipo -->
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-2">Tipo de asamblea *</label>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <button
+              v-for="t in TIPOS_ASAMBLEA"
+              :key="t.value"
+              type="button"
+              :class="['rounded-lg border-2 px-3 py-2.5 text-left transition-all',
+                       form.tipo === t.value
+                         ? 'border-indigo-500 bg-indigo-50'
+                         : 'border-gray-200 hover:border-gray-300']"
+              @click="form.tipo = t.value; errors.tipo = undefined"
+            >
+              <span class="text-lg">{{ t.icon }}</span>
+              <p :class="['text-xs font-medium mt-0.5', form.tipo === t.value ? 'text-indigo-700' : 'text-gray-700']">{{ t.label }}</p>
+            </button>
+          </div>
+          <p v-if="errors.tipo" class="mt-1 text-xs text-red-600">{{ errors.tipo }}</p>
+        </div>
 
-      <!-- Asunto -->
-      <div class="flex flex-col gap-1 sm:col-span-2">
-        <label class="text-xs font-semibold text-slate-600">Asunto *</label>
-        <input
-          v-model="form.asunto"
-          type="text"
-          placeholder="Descripción del asunto principal"
-          required
-          minlength="5"
-          class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
+        <!-- Número de acta -->
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Número de acta *</label>
+          <input
+            v-model="form.numero_acta"
+            type="text"
+            placeholder="Ej: ACTA-2024-001"
+            :class="fieldClass(errors.numero_acta)"
+            @input="errors.numero_acta = undefined"
+          />
+          <p v-if="errors.numero_acta" class="mt-1 text-xs text-red-600">{{ errors.numero_acta }}</p>
+        </div>
 
-      <!-- Fecha -->
-      <div class="flex flex-col gap-1">
-        <label class="text-xs font-semibold text-slate-600">Fecha programada *</label>
-        <input
-          v-model="form.fecha_programada"
-          type="datetime-local"
-          required
-          class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
+        <!-- Asunto -->
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Asunto *</label>
+          <input
+            v-model="form.asunto"
+            type="text"
+            placeholder="Tema principal de la asamblea..."
+            :class="fieldClass(errors.asunto)"
+            @input="errors.asunto = undefined"
+          />
+          <p v-if="errors.asunto" class="mt-1 text-xs text-red-600">{{ errors.asunto }}</p>
+        </div>
 
-      <!-- Lugar -->
-      <div class="flex flex-col gap-1">
-        <label class="text-xs font-semibold text-slate-600">Lugar</label>
-        <input
-          v-model="form.lugar"
-          type="text"
-          placeholder="Salón comunal, virtual, etc."
-          class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
+        <!-- Fecha y Lugar -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Fecha y hora *</label>
+            <input
+              v-model="form.fecha_programada"
+              type="datetime-local"
+              :class="fieldClass(errors.fecha_programada)"
+              @change="errors.fecha_programada = undefined"
+            />
+            <p v-if="errors.fecha_programada" class="mt-1 text-xs text-red-600">{{ errors.fecha_programada }}</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Lugar</label>
+            <input
+              v-model="form.lugar"
+              type="text"
+              placeholder="Salón comunal, virtual..."
+              :class="fieldClass()"
+            />
+          </div>
+        </div>
 
-      <!-- Quórum -->
-      <div class="flex flex-col gap-1">
-        <label class="text-xs font-semibold text-slate-600">Quórum requerido (%)</label>
-        <input
-          v-model.number="form.quorum_requerido"
-          type="number"
-          min="1"
-          max="100"
-          placeholder="Ej: 51"
-          class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
+        <!-- Quórum -->
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">
+            Quórum requerido: <span class="text-indigo-600 font-bold">{{ form.quorum_requerido }}%</span>
+          </label>
+          <input
+            v-model.number="form.quorum_requerido"
+            type="range"
+            min="1"
+            max="100"
+            step="1"
+            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+          />
+          <div class="flex justify-between text-xs text-gray-400 mt-1">
+            <span>1%</span><span>50%</span><span>100%</span>
+          </div>
+        </div>
 
-      <!-- Estado (solo edición) -->
-      <div v-if="esEdicion" class="flex flex-col gap-1">
-        <label class="text-xs font-semibold text-slate-600">Estado</label>
-        <select
-          v-model="form.estado"
-          class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="programada">Programada</option>
-          <option value="en_curso">En curso</option>
-          <option value="realizada">Realizada</option>
-          <option value="cancelada">Cancelada</option>
-          <option value="pospuesta">Pospuesta</option>
-        </select>
-      </div>
+        <!-- Notas -->
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Notas / Agenda</label>
+          <textarea
+            v-model="form.notas"
+            rows="4"
+            placeholder="Puntos de la agenda, instrucciones previas..."
+            class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 bg-white resize-none"
+          />
+        </div>
 
-      <!-- Notas -->
-      <div class="flex flex-col gap-1 sm:col-span-2">
-        <label class="text-xs font-semibold text-slate-600">Notas</label>
-        <textarea
-          v-model="form.notas"
-          rows="3"
-          placeholder="Observaciones adicionales..."
-          class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
-        />
-      </div>
+        <!-- Server error -->
+        <div v-if="serverError" class="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+          {{ serverError }}
+        </div>
 
-      <!-- Error -->
-      <div v-if="formError" class="sm:col-span-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-        {{ formError }}
-      </div>
-
-      <!-- Acciones -->
-      <div class="sm:col-span-2 flex justify-end gap-3 mt-2">
-        <RouterLink
-          to="/asambleas"
-          class="text-sm font-semibold px-4 py-2 border border-slate-300 bg-slate-50 hover:bg-slate-100 rounded-lg text-slate-600"
-        >Cancelar</RouterLink>
-        <button
-          type="submit"
-          :disabled="saving"
-          class="text-sm font-semibold px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-lg"
-        >
-          {{ saving ? 'Guardando...' : esEdicion ? 'Guardar cambios' : 'Crear asamblea' }}
-        </button>
-      </div>
-    </form>
+        <!-- Acciones -->
+        <div class="flex gap-3 pt-2">
+          <button
+            type="button"
+            class="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            @click="router.back()"
+          >Cancelar</button>
+          <button
+            type="submit"
+            :disabled="saving"
+            class="flex-1 flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+          >
+            <svg v-if="saving" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            {{ saving ? 'Guardando...' : esEdicion ? 'Guardar cambios' : 'Crear asamblea' }}
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { useAsambleas } from '../composables/useAsambleas'
+import { computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useAsambleasStore } from '../store/asambleas.store'
+import { useAsambleaForm, TIPOS_ASAMBLEA } from '../composables/useAsambleas'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
-import type { TipoAsamblea, EstadoAsamblea } from '../types/asambleas.types'
 
-const route = useRoute()
+const route     = useRoute()
+const router    = useRouter()
+const store     = useAsambleasStore()
 const authStore = useAuthStore()
-const { submitCreate, submitUpdate, loadOne, current, saving, formError } = useAsambleas()
 
 const esEdicion = computed(() => !!route.params.id)
+const { form, errors, saving, serverError, submit, submitUpdate, loadFromAsamblea } = useAsambleaForm(esEdicion.value ? 'editar' : 'crear')
 
-const form = ref({
-  numero_acta: '',
-  tipo: '' as TipoAsamblea | '',
-  asunto: '',
-  fecha_programada: '',
-  lugar: '',
-  quorum_requerido: undefined as number | undefined,
-  notas: '',
-  estado: undefined as EstadoAsamblea | undefined,
-})
-
-async function submit() {
-  if (!form.value.tipo) return
-  if (esEdicion.value) {
-    await submitUpdate(route.params.id as string, {
-      numero_acta:      form.value.numero_acta || undefined,
-      tipo:             form.value.tipo || undefined,
-      asunto:           form.value.asunto || undefined,
-      fecha_programada: form.value.fecha_programada
-        ? new Date(form.value.fecha_programada).toISOString()
-        : undefined,
-      lugar:            form.value.lugar || undefined,
-      quorum_requerido: form.value.quorum_requerido,
-      notas:            form.value.notas || undefined,
-      estado:           form.value.estado,
-    })
-  } else {
-    const conjuntoId = (authStore.user as any)?.conjunto_id ?? ''
-    await submitCreate({
-      conjuntoId,
-      numero_acta:      form.value.numero_acta,
-      tipo:             form.value.tipo as TipoAsamblea,
-      asunto:           form.value.asunto,
-      fecha_programada: new Date(form.value.fecha_programada).toISOString(),
-      lugar:            form.value.lugar || undefined,
-      quorum_requerido: form.value.quorum_requerido,
-      notas:            form.value.notas || undefined,
-    })
-  }
-}
+// Pre-rellenar conjuntoId del usuario
+if (authStore.user?.unidad_id) form.value.conjuntoId = authStore.user.unidad_id ?? ''
 
 onMounted(async () => {
   if (esEdicion.value) {
-    await loadOne(route.params.id as string)
-    if (current.value) {
-      form.value = {
-        numero_acta:      current.value.numero_acta,
-        tipo:             current.value.tipo,
-        asunto:           current.value.asunto,
-        fecha_programada: current.value.fecha_programada.slice(0, 16),
-        lugar:            current.value.lugar ?? '',
-        quorum_requerido: current.value.quorum_requerido,
-        notas:            current.value.notas ?? '',
-        estado:           current.value.estado,
-      }
+    await store.fetchOne(route.params.id as string)
+    if (store.current) {
+      const c = store.current as any
+      loadFromAsamblea({
+        conjuntoId:       c.conjunto_id,
+        numero_acta:      c.numero_acta,
+        tipo:             c.tipo,
+        asunto:           c.asunto,
+        fecha_programada: c.fecha_programada,
+        lugar:            c.lugar,
+        quorum_requerido: c.quorum_requerido,
+        notas:            c.notas,
+      })
     }
   }
 })
+
+async function handleSubmit() {
+  if (esEdicion.value) {
+    const ok = await submitUpdate(route.params.id as string)
+    if (ok) router.push(`/asambleas/${route.params.id}`)
+  } else {
+    const result = await submit()
+    if (result) router.push(`/asambleas/${result.id}`)
+  }
+}
+
+function fieldClass(error?: string) {
+  const base = 'block w-full rounded-lg border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 transition-colors bg-white'
+  return error
+    ? `${base} border-red-300 focus:border-red-500 focus:ring-red-200`
+    : `${base} border-gray-300 focus:border-indigo-400 focus:ring-indigo-200`
+}
 </script>

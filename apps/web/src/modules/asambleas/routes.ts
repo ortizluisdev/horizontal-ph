@@ -1,34 +1,36 @@
 import type { RouteRecordRaw } from 'vue-router'
 
-export const asambleasRoutes: RouteRecordRaw[] = [
+const asambleasRoutes: RouteRecordRaw[] = [
   {
-    path: '/asambleas',
-    name: 'asambleas-list',
+    path: 'asambleas',
+    name: 'asambleas',
     component: () => import('./views/AsambleasListView.vue'),
-    meta: { requiresAuth: true },
+    meta: { title: 'Asambleas', requiresAuth: true },
   },
   {
-    path: '/asambleas/nueva',
-    name: 'asambleas-create',
+    path: 'asambleas/nueva',
+    name: 'asambleas-nueva',
     component: () => import('./views/AsambleaFormView.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true },
+    meta: { title: 'Nueva asamblea', requiresAuth: true },
   },
   {
-    path: '/asambleas/:id',
-    name: 'asambleas-detail',
+    path: 'asambleas/:id',
+    name: 'asambleas-detalle',
     component: () => import('./views/AsambleaDetailView.vue'),
-    meta: { requiresAuth: true },
+    meta: { title: 'Detalle asamblea', requiresAuth: true },
   },
   {
-    path: '/asambleas/:id/editar',
-    name: 'asambleas-edit',
+    path: 'asambleas/:id/editar',
+    name: 'asambleas-editar',
     component: () => import('./views/AsambleaFormView.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true },
+    meta: { title: 'Editar asamblea', requiresAuth: true },
   },
   {
-    path: '/asambleas/:id/votacion',
+    path: 'asambleas/:id/votacion',
     name: 'asambleas-votacion',
     component: () => import('./views/VotacionView.vue'),
-    meta: { requiresAuth: true },
+    meta: { title: 'Votación', requiresAuth: true },
   },
 ]
+
+export default asambleasRoutes
