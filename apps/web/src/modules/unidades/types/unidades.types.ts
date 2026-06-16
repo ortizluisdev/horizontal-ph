@@ -9,6 +9,20 @@ export type TipoUnidad =
   | 'parqueadero'
   | 'otro'
 
+export const TIPO_UNIDAD_LABELS: Record<TipoUnidad, string> = {
+  apartamento:     'Apartamento',
+  casa:            'Casa',
+  local_comercial: 'Local comercial',
+  oficina:         'Oficina',
+  bodega:          'Bodega',
+  parqueadero:     'Parqueadero',
+  otro:            'Otro',
+}
+
+export const TIPO_UNIDAD_OPTIONS = Object.entries(TIPO_UNIDAD_LABELS).map(
+  ([value, label]) => ({ value: value as TipoUnidad, label })
+)
+
 export interface Unidad {
   id: string
   nombre: string
@@ -17,6 +31,7 @@ export interface Unidad {
   conjunto_nombre?: string | null
   tipo_unidad?: TipoUnidad | null
   numero_unidad?: string | null
+  torre?: string | null
   piso?: number | null
   area_m2?: number | null
   activo: boolean
@@ -30,6 +45,7 @@ export interface UnidadCreateInput {
   descripcion?: string
   tipo_unidad?: TipoUnidad
   numero_unidad?: string
+  torre?: string
   piso?: number
   area_m2?: number
 }
@@ -39,6 +55,7 @@ export interface UnidadUpdateInput {
   descripcion?: string
   tipo_unidad?: TipoUnidad
   numero_unidad?: string
+  torre?: string
   piso?: number
   area_m2?: number
   activo?: boolean
@@ -50,14 +67,5 @@ export interface UnidadQuery extends PaginationParams {
   tipo_unidad?: TipoUnidad
   activo?: boolean
   piso?: number
-}
-
-export const TIPO_UNIDAD_LABELS: Record<TipoUnidad, string> = {
-  apartamento:     'Apartamento',
-  casa:            'Casa',
-  local_comercial: 'Local comercial',
-  oficina:         'Oficina',
-  bodega:          'Bodega',
-  parqueadero:     'Parqueadero',
-  otro:            'Otro',
+  torre?: string
 }

@@ -1,7 +1,5 @@
 import type { RouteRecordRaw } from 'vue-router'
 
-// ─── Rutas nombradas ──────────────────────────────────────────────────────────
-
 export const UNIDADES_ROUTES = {
   list:   '/unidades',
   nuevo:  '/unidades/nuevo',
@@ -9,10 +7,7 @@ export const UNIDADES_ROUTES = {
   edit:   (id: string) => `/unidades/${id}/editar`,
 } as const
 
-// ─── Definición de rutas para vue-router ──────────────────────────────────────
-// IMPORTANTE: 'nuevo' debe estar ANTES de ':id' para que el router no
-// intente parsear la palabra "nuevo" como un UUID y el backend devuelva
-// 400 "params/id must match format uuid".
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export const unidadesRoutes: RouteRecordRaw[] = [
   {
@@ -21,8 +16,7 @@ export const unidadesRoutes: RouteRecordRaw[] = [
     component: () => import('./views/UnidadesListView.vue'),
   },
   {
-    // ⚠️ Debe ir ANTES de /unidades/:id
-    path: '/unidades/nuevo',
+    path: '/unidades/nuevo',  // ⚠️ DEBE ir ANTES de :id
     name: 'unidades-nuevo',
     component: () => import('./views/UnidadFormView.vue'),
   },
@@ -31,10 +25,7 @@ export const unidadesRoutes: RouteRecordRaw[] = [
     name: 'unidades-detail',
     component: () => import('./views/UnidadDetailView.vue'),
     beforeEnter: (to) => {
-      const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-      if (!UUID_RE.test(to.params.id as string)) {
-        return { name: 'unidades-list' }
-      }
+      if (!UUID_RE.test(to.params.id as string)) return { name: 'unidades-list' }
     },
   },
   {
@@ -42,10 +33,7 @@ export const unidadesRoutes: RouteRecordRaw[] = [
     name: 'unidades-editar',
     component: () => import('./views/UnidadFormView.vue'),
     beforeEnter: (to) => {
-      const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-      if (!UUID_RE.test(to.params.id as string)) {
-        return { name: 'unidades-list' }
-      }
+      if (!UUID_RE.test(to.params.id as string)) return { name: 'unidades-list' }
     },
   },
 ]

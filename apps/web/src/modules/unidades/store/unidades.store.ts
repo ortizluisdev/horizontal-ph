@@ -15,58 +15,44 @@ export const useUnidadesStore = defineStore('unidades', () => {
   const pages = computed(() => Math.max(1, Math.ceil(total.value / (limit.value || 1))))
 
   async function fetchList(params?: UnidadQuery) {
-    loading.value = true
-    error.value   = null
+    loading.value = true; error.value = null
     try {
       const { data } = await unidadesApi.list(params)
-      list.value  = data.data
-      total.value = data.total
-      page.value  = data.page
-      limit.value = data.limit
+      list.value = data.data; total.value = data.total
+      page.value = data.page; limit.value = data.limit
     } catch (e: any) {
       error.value = e.response?.data?.message ?? 'Error al cargar unidades'
-    } finally {
-      loading.value = false
-    }
+    } finally { loading.value = false }
   }
 
   async function fetchByConjunto(conjuntoId: string) {
-    loading.value = true
-    error.value   = null
+    loading.value = true; error.value = null
     try {
       const { data } = await unidadesApi.listByConjunto(conjuntoId)
-      list.value  = data
-      total.value = data.length
-      page.value  = 1
-      limit.value = Math.max(data.length, 1)
+      list.value = data; total.value = data.length
+      page.value = 1;    limit.value = Math.max(data.length, 1)
     } catch (e: any) {
       error.value = e.response?.data?.message ?? 'Error al cargar unidades del conjunto'
-    } finally {
-      loading.value = false
-    }
+    } finally { loading.value = false }
   }
 
   async function fetchById(id: string) {
-    loading.value = true
-    error.value   = null
+    loading.value = true; error.value = null
     try {
       const { data } = await unidadesApi.getById(id)
-      current.value  = data
+      current.value = data
     } catch (e: any) {
       error.value = e.response?.data?.message ?? 'Error al cargar la unidad'
-    } finally {
-      loading.value = false
-    }
+    } finally { loading.value = false }
   }
 
-  async function create(input: UnidadCreateInput) {
+  async function create(input: UnidadCreateInput): Promise<Unidad> {
     const { data } = await unidadesApi.create(input)
-    list.value.unshift(data)
-    total.value += 1
+    list.value.unshift(data); total.value++
     return data
   }
 
-  async function update(id: string, input: UnidadUpdateInput) {
+  async function update(id: string, input: UnidadUpdateInput): Promise<Unidad> {
     const { data } = await unidadesApi.update(id, input)
     const idx = list.value.findIndex((u) => u.id === id)
     if (idx !== -1) list.value[idx] = data
@@ -74,7 +60,7 @@ export const useUnidadesStore = defineStore('unidades', () => {
     return data
   }
 
-  async function deactivate(id: string) {
+  async function deactivate(id: string): Promise<Unidad> {
     const { data } = await unidadesApi.deactivate(id)
     const idx = list.value.findIndex((u) => u.id === id)
     if (idx !== -1) list.value[idx] = data
@@ -82,7 +68,7 @@ export const useUnidadesStore = defineStore('unidades', () => {
     return data
   }
 
-  async function remove(id: string) {
+  async function remove(id: string): Promise<void> {
     await unidadesApi.remove(id)
     list.value  = list.value.filter((u) => u.id !== id)
     total.value = Math.max(0, total.value - 1)
@@ -90,16 +76,10 @@ export const useUnidadesStore = defineStore('unidades', () => {
   }
 
   function reset() {
-    list.value    = []
-    current.value = null
-    total.value   = 0
-    page.value    = 1
-    limit.value   = 20
-    error.value   = null
+    list.value = []; current.value = null
+    total.value = 0; page.value = 1; limit.value = 20; error.value = null
   }
 
-  return {
-    list, current, total, page, limit, pages, loading, error,
-    fetchList, fetchByConjunto, fetchById, create, update, deactivate, remove, reset,
-  }
+  return { list, current, total, page, limit, pages, loading, error,
+    fetchList, fetchByConjunto, fetchById, create, update, deactivate, remove, reset }
 })

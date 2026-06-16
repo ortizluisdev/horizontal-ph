@@ -1,43 +1,27 @@
 <template>
-  <div class="p-4 sm:p-6 max-w-2xl mx-auto space-y-6">
+  <div class="p-4 sm:p-6 max-w-3xl mx-auto space-y-6">
 
-    <!-- Header -->
     <div class="flex items-center gap-3">
-      <button
-        @click="$router.back()"
-        class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors"
-      >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <button @click="$router.back()" class="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors" aria-label="Volver">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
         </svg>
       </button>
       <div>
-        <h1 class="text-xl sm:text-2xl font-bold text-gray-900">
-          {{ isEdit ? 'Editar unidad' : 'Nueva unidad' }}
-        </h1>
+        <h1 class="text-2xl font-bold text-gray-900">{{ isEdit ? 'Editar unidad' : 'Nueva unidad' }}</h1>
         <p class="text-sm text-gray-500 mt-0.5">
           {{ isEdit ? 'Modifica los datos de la unidad' : 'Registra una nueva unidad en el conjunto' }}
         </p>
       </div>
     </div>
 
-    <!-- Loading inicial -->
-    <div v-if="store.loading && isEdit" class="flex justify-center py-16">
-      <div class="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+    <div v-if="isEdit && store.loading && !store.current" class="flex justify-center py-16">
+      <div class="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"/>
     </div>
 
-    <!-- Error al cargar en edición -->
-    <div
-      v-else-if="store.error && isEdit"
-      class="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3"
-    >
-      {{ store.error }}
-    </div>
-
-    <!-- Formulario -->
-    <div v-else class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 sm:p-6">
+    <div v-else class="bg-white rounded-xl border border-gray-200 p-6">
       <UnidadForm
-        :initial="isEdit ? (store.current ?? undefined) : undefined"
+        :initial="store.current ?? undefined"
         :loading="submitting"
         :error="submitError"
         @submit="onSubmit"
@@ -65,25 +49,20 @@ const isEdit = computed(() => !!id.value)
 
 onMounted(() => {
   if (id.value) store.fetchById(id.value)
+  else store.reset()  // evita que datos de edición anterior aparezcan en formulario nuevo
 })
 
 async function onSubmit(data: UnidadCreateInput | UnidadUpdateInput) {
-  submitting.value  = true
-  submitError.value = null
+  submitting.value = true; submitError.value = null
   try {
-    if (isEdit.value && id.value) {
-      await store.update(id.value, data as UnidadUpdateInput)
-    } else {
-      await store.create(data as UnidadCreateInput)
-    }
+    if (isEdit.value && id.value) await store.update(id.value, data as UnidadUpdateInput)
+    else await store.create(data as UnidadCreateInput)
     router.push('/unidades')
   } catch (e: any) {
     submitError.value =
       e.response?.data?.errors?.[0]?.message ??
       e.response?.data?.message ??
       'Error al guardar la unidad'
-  } finally {
-    submitting.value = false
-  }
+  } finally { submitting.value = false }
 }
 </script>

@@ -4,7 +4,7 @@
       <thead class="bg-gray-50">
         <tr>
           <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Nombre</th>
-          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Número</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden sm:table-cell">N° / Torre</th>
           <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Tipo</th>
           <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Piso</th>
           <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Área</th>
@@ -25,62 +25,39 @@
             </div>
           </td>
         </tr>
-        <tr
-          v-for="u in unidades"
-          :key="u.id"
-          class="hover:bg-blue-50/30 transition-colors"
-        >
+        <tr v-for="u in unidades" :key="u.id" class="hover:bg-blue-50/30 transition-colors">
           <td class="px-4 py-3">
             <p class="font-semibold text-gray-900">{{ u.nombre }}</p>
             <p v-if="u.descripcion" class="text-xs text-gray-400 truncate max-w-[180px]">{{ u.descripcion }}</p>
           </td>
-          <td class="px-4 py-3 text-gray-500 hidden sm:table-cell">
-            {{ u.numero_unidad ?? '—' }}
+          <td class="px-4 py-3 text-gray-500 text-xs hidden sm:table-cell">
+            <span v-if="u.numero_unidad">{{ u.numero_unidad }}</span>
+            <span v-if="u.numero_unidad && u.torre"> · </span>
+            <span v-if="u.torre" class="text-gray-400">T.{{ u.torre }}</span>
+            <span v-if="!u.numero_unidad && !u.torre">—</span>
           </td>
-          <td class="px-4 py-3 text-gray-600">
-            {{ u.tipo_unidad ? TIPO_UNIDAD_LABELS[u.tipo_unidad] : '—' }}
-          </td>
+          <td class="px-4 py-3 text-gray-600">{{ u.tipo_unidad ? TIPO_UNIDAD_LABELS[u.tipo_unidad] : '—' }}</td>
           <td class="px-4 py-3 text-gray-500 hidden md:table-cell">{{ u.piso ?? '—' }}</td>
-          <td class="px-4 py-3 text-gray-500 hidden md:table-cell">
-            {{ u.area_m2 ? `${u.area_m2} m²` : '—' }}
-          </td>
-          <td class="px-4 py-3 text-gray-500 hidden lg:table-cell">
-            {{ u.conjunto_nombre ?? '—' }}
-          </td>
+          <td class="px-4 py-3 text-gray-500 hidden md:table-cell">{{ u.area_m2 ? `${u.area_m2} m²` : '—' }}</td>
+          <td class="px-4 py-3 text-gray-500 hidden lg:table-cell truncate max-w-[140px]">{{ u.conjunto_nombre ?? '—' }}</td>
           <td class="px-4 py-3">
-            <span
-              :class="u.activo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'"
-              class="text-xs font-semibold px-2 py-0.5 rounded-full"
-            >
+            <span :class="u.activo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'"
+              class="text-xs font-semibold px-2 py-0.5 rounded-full">
               {{ u.activo ? 'Sí' : 'No' }}
             </span>
           </td>
           <td class="px-4 py-3">
-            <div class="flex justify-end gap-1">
-              <router-link
-                :to="`/unidades/${u.id}`"
-                class="px-2.5 py-1 rounded-md text-xs font-semibold text-blue-600 hover:bg-blue-50 transition-colors"
-              >
-                Ver
-              </router-link>
-              <router-link
-                :to="`/unidades/${u.id}/editar`"
-                class="px-2.5 py-1 rounded-md text-xs font-semibold text-gray-600 hover:bg-gray-100 transition-colors"
-              >
-                Editar
-              </router-link>
-              <button
-                @click="$emit('desactivar', u.id)"
-                class="px-2.5 py-1 rounded-md text-xs font-semibold text-amber-600 hover:bg-amber-50 transition-colors"
-              >
+            <div class="flex justify-end gap-1 flex-wrap">
+              <router-link :to="`/unidades/${u.id}`"
+                class="px-2.5 py-1 rounded-md text-xs font-semibold text-blue-600 hover:bg-blue-50 transition-colors">Ver</router-link>
+              <router-link :to="`/unidades/${u.id}/editar`"
+                class="px-2.5 py-1 rounded-md text-xs font-semibold text-gray-600 hover:bg-gray-100 transition-colors">Editar</router-link>
+              <button @click="$emit('desactivar', u.id)"
+                class="px-2.5 py-1 rounded-md text-xs font-semibold text-amber-600 hover:bg-amber-50 transition-colors">
                 {{ u.activo ? 'Desactivar' : 'Activar' }}
               </button>
-              <button
-                @click="$emit('eliminar', u.id)"
-                class="px-2.5 py-1 rounded-md text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors"
-              >
-                Eliminar
-              </button>
+              <button @click="$emit('eliminar', u.id)"
+                class="px-2.5 py-1 rounded-md text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors">Eliminar</button>
             </div>
           </td>
         </tr>
@@ -94,8 +71,5 @@ import type { Unidad } from '../types/unidades.types'
 import { TIPO_UNIDAD_LABELS } from '../types/unidades.types'
 
 defineProps<{ unidades: Unidad[] }>()
-defineEmits<{
-  (e: 'eliminar', id: string): void
-  (e: 'desactivar', id: string): void
-}>()
+defineEmits<{ (e: 'eliminar', id: string): void; (e: 'desactivar', id: string): void }>()
 </script>

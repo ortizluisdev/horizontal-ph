@@ -6,8 +6,6 @@ const repo = new UnidadRepository();
 
 export class UnidadService {
 
-  // ── List ───────────────────────────────────────────────────────────────────
-
   async list(query: UnidadQuery): Promise<PaginatedUnidades> {
     return repo.list(query);
   }
@@ -16,20 +14,13 @@ export class UnidadService {
     return repo.listByConjunto(conjuntoId);
   }
 
-  // ── Find one ───────────────────────────────────────────────────────────────
-
   async findById(id: string): Promise<Unidad | null> {
     return repo.findById(id);
   }
 
-  // ── Create ─────────────────────────────────────────────────────────────────
-
   async create(data: UnidadCreateInput): Promise<Unidad> {
     if (data.numero_unidad) {
-      const duplicate = await repo.existsByConjuntoAndNumero(
-        data.conjuntoId,
-        data.numero_unidad
-      );
+      const duplicate = await repo.existsByConjuntoAndNumero(data.conjuntoId, data.numero_unidad);
       if (duplicate) {
         throw Object.assign(
           new Error("Ya existe una unidad con ese número en este conjunto"),
@@ -40,14 +31,11 @@ export class UnidadService {
     return repo.create(data);
   }
 
-  // ── Update ─────────────────────────────────────────────────────────────────
-
   async update(id: string, data: UnidadUpdateInput): Promise<Unidad> {
     const existing = await repo.findById(id);
     if (!existing) {
       throw Object.assign(new Error("Unidad no encontrada"), { statusCode: 404 });
     }
-
     if (data.numero_unidad && data.numero_unidad !== existing.numero_unidad) {
       const duplicate = await repo.existsByConjuntoAndNumero(
         existing.conjunto_id,
@@ -61,11 +49,8 @@ export class UnidadService {
         );
       }
     }
-
     return (await repo.update(id, data)) as Unidad;
   }
-
-  // ── Deactivate (soft delete) ───────────────────────────────────────────────
 
   async deactivate(id: string): Promise<Unidad> {
     const result = await repo.deactivate(id);
@@ -74,8 +59,6 @@ export class UnidadService {
     }
     return result;
   }
-
-  // ── Hard delete ────────────────────────────────────────────────────────────
 
   async remove(id: string): Promise<void> {
     const exists = await repo.findById(id);

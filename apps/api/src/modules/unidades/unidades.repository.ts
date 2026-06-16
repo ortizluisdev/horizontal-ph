@@ -2,8 +2,6 @@ import { pool } from "../../core/database/pg.client.js";
 import type { Unidad } from "@horizontal-ph/types";
 import type { UnidadCreateInput, UnidadUpdateInput, UnidadQuery } from "./unidades.schema.js";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 export interface PaginatedUnidades {
   data:  Unidad[];
   total: number;
@@ -11,9 +9,6 @@ export interface PaginatedUnidades {
   limit: number;
   pages: number;
 }
-
-// ─── Columnas seguras que existen en la tabla ────────────────────────────────
-// Mantenerlas aquí evita que un typo en un string SQL pase desapercibido.
 
 const SELECT_COLS = `
   u.id,
@@ -23,6 +18,7 @@ const SELECT_COLS = `
   c.nombre   AS conjunto_nombre,
   u.tipo_unidad,
   u.numero_unidad,
+  u.torre,
   u.piso,
   u.area_m2,
   u.activo,
@@ -30,14 +26,10 @@ const SELECT_COLS = `
   u.updated_at
 `;
 
-// ─── Repository ───────────────────────────────────────────────────────────────
-
 export class UnidadRepository {
 
-  // ── List with pagination + filters ─────────────────────────────────────────
-
   async list(query: UnidadQuery): Promise<PaginatedUnidades> {
-    const { page, limit, search, conjuntoId, tipo_unidad, activo, piso } = query;
+    const { page, limit, search, conjuntoId, tipo_unidad, activo, piso, torre } = query;
     const offset = (page - 1) * limit;
 
     const conditions: string[] = [];
@@ -45,33 +37,19 @@ export class UnidadRepository {
     let idx = 1;
 
     if (search) {
-      conditions.push(
-        `(u.nombre ILIKE $${idx} OR u.descripcion ILIKE $${idx} OR u.numero_unidad ILIKE $${idx})`
-      );
+      conditions.push(`(u.nombre ILIKE $${idx} OR u.descripcion ILIKE $${idx} OR u.numero_unidad ILIKE $${idx})`);
       values.push(`%${search}%`);
       idx++;
     }
-    if (conjuntoId) {
-      conditions.push(`u.conjunto_id = $${idx++}`);
-      values.push(conjuntoId);
-    }
-    if (tipo_unidad !== undefined) {
-      conditions.push(`u.tipo_unidad = $${idx++}`);
-      values.push(tipo_unidad);
-    }
-    if (activo !== undefined) {
-      conditions.push(`u.activo = $${idx++}`);
-      values.push(activo);
-    }
-    if (piso !== undefined) {
-      conditions.push(`u.piso = $${idx++}`);
-      values.push(piso);
-    }
+    if (conjuntoId)            { conditions.push(`u.conjunto_id = $${idx++}`);  values.push(conjuntoId); }
+    if (tipo_unidad)           { conditions.push(`u.tipo_unidad = $${idx++}`);  values.push(tipo_unidad); }
+    if (activo !== undefined)  { conditions.push(`u.activo = $${idx++}`);       values.push(activo); }
+    if (piso !== undefined)    { conditions.push(`u.piso = $${idx++}`);         values.push(piso); }
+    if (torre)                 { conditions.push(`u.torre ILIKE $${idx++}`);    values.push(`%${torre}%`); }
 
-    const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
-
+    const where    = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
     const dataIdx  = idx++;
-    const offsetIdx = idx++;
+    const ofstIdx  = idx++;
 
     const [dataRes, countRes] = await Promise.all([
       pool.query<Unidad>(
@@ -80,7 +58,7 @@ export class UnidadRepository {
          LEFT   JOIN conjuntos c ON c.id = u.conjunto_id
          ${where}
          ORDER  BY u.nombre ASC
-         LIMIT  $${dataIdx} OFFSET $${offsetIdx}`,
+         LIMIT  $${dataIdx} OFFSET $${ofstIdx}`,
         [...values, limit, offset]
       ),
       pool.query<{ total: string }>(
@@ -96,11 +74,9 @@ export class UnidadRepository {
       total,
       page,
       limit,
-      pages: Math.ceil(total / limit),
+      pages: Math.ceil(total / limit) || 1,
     };
   }
-
-  // ── Find one ────────────────────────────────────────────────────────────────
 
   async findById(id: string): Promise<Unidad | null> {
     const res = await pool.query<Unidad>(
@@ -114,13 +90,11 @@ export class UnidadRepository {
     return res.rows[0] ?? null;
   }
 
-  // ── Create ──────────────────────────────────────────────────────────────────
-
   async create(data: UnidadCreateInput): Promise<Unidad> {
     const res = await pool.query<{ id: string }>(
       `INSERT INTO unidades
-         (conjunto_id, nombre, descripcion, tipo_unidad, numero_unidad, piso, area_m2)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+         (conjunto_id, nombre, descripcion, tipo_unidad, numero_unidad, torre, piso, area_m2)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING id`,
       [
         data.conjuntoId,
@@ -128,6 +102,7 @@ export class UnidadRepository {
         data.descripcion   ?? null,
         data.tipo_unidad   ?? null,
         data.numero_unidad ?? null,
+        data.torre         ?? null,
         data.piso          ?? null,
         data.area_m2       ?? null,
       ]
@@ -135,15 +110,13 @@ export class UnidadRepository {
     return (await this.findById(res.rows[0].id)) as Unidad;
   }
 
-  // ── Update ──────────────────────────────────────────────────────────────────
-
   async update(id: string, data: UnidadUpdateInput): Promise<Unidad | null> {
     const sets:   string[]  = [];
     const values: unknown[] = [];
     let idx = 1;
 
     const fields: (keyof UnidadUpdateInput)[] = [
-      "nombre", "descripcion", "tipo_unidad", "numero_unidad", "piso", "area_m2", "activo",
+      "nombre", "descripcion", "tipo_unidad", "numero_unidad", "torre", "piso", "area_m2", "activo",
     ];
 
     for (const field of fields) {
@@ -166,8 +139,6 @@ export class UnidadRepository {
     return this.findById(id);
   }
 
-  // ── Soft delete ─────────────────────────────────────────────────────────────
-
   async deactivate(id: string): Promise<Unidad | null> {
     const res = await pool.query(
       `UPDATE unidades SET activo = false, updated_at = now() WHERE id = $1`,
@@ -177,14 +148,10 @@ export class UnidadRepository {
     return this.findById(id);
   }
 
-  // ── Hard delete ─────────────────────────────────────────────────────────────
-
   async remove(id: string): Promise<boolean> {
     const res = await pool.query(`DELETE FROM unidades WHERE id = $1`, [id]);
     return (res.rowCount ?? 0) > 0;
   }
-
-  // ── Helpers ─────────────────────────────────────────────────────────────────
 
   async existsByConjuntoAndNumero(
     conjuntoId: string,
@@ -205,13 +172,11 @@ export class UnidadRepository {
 
   async listByConjunto(conjuntoId: string): Promise<Unidad[]> {
     const res = await pool.query<Unidad>(
-      `SELECT
-         u.id, u.nombre, u.descripcion,
-         u.conjunto_id, u.tipo_unidad, u.numero_unidad, u.piso, u.area_m2,
-         u.activo, u.created_at, u.updated_at
-       FROM  unidades u
-       WHERE u.conjunto_id = $1
-       ORDER BY u.piso ASC NULLS LAST, u.nombre ASC`,
+      `SELECT ${SELECT_COLS}
+       FROM   unidades u
+       LEFT   JOIN conjuntos c ON c.id = u.conjunto_id
+       WHERE  u.conjunto_id = $1
+       ORDER  BY u.piso ASC NULLS LAST, u.nombre ASC`,
       [conjuntoId]
     );
     return res.rows;

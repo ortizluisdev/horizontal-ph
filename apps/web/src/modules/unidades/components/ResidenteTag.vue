@@ -4,12 +4,8 @@
       {{ initials }}
     </span>
     <span class="max-w-[140px] truncate">{{ nombre }}</span>
-    <button
-      v-if="removable"
-      @click.stop="$emit('remove')"
-      class="ml-0.5 text-blue-400 hover:text-red-500 transition-colors leading-none font-bold"
-      title="Quitar residente"
-    >
+    <button v-if="removable" @click.stop="$emit('remove')"
+      class="ml-0.5 text-blue-400 hover:text-red-500 transition-colors leading-none font-bold" title="Quitar residente">
       ×
     </button>
   </span>
@@ -17,20 +13,9 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-
-const props = defineProps<{
-  nombre: string
-  removable?: boolean
-}>()
-
+const props = defineProps<{ nombre: string; removable?: boolean }>()
 defineEmits<{ (e: 'remove'): void }>()
-
 const initials = computed(() =>
-  props.nombre
-    .split(' ')
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
+  props.nombre.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()
 )
 </script>

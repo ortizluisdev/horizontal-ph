@@ -176,49 +176,40 @@ export interface NormativaInput {
   descripcion?: string | null;
 }
 
+// ─── Unidad (alineada con migración 016 y API actual) ────────────────────────
+
+export type TipoUnidad =
+  | 'apartamento'
+  | 'casa'
+  | 'local_comercial'
+  | 'oficina'
+  | 'bodega'
+  | 'parqueadero'
+  | 'otro';
+
 export interface Unidad {
   id: string;
   conjunto_id: string;
+  conjunto_nombre?: string | null;
   nombre: string;
-  numero_unidad: string;
+  descripcion?: string | null;
+  tipo_unidad?: TipoUnidad | null;
+  numero_unidad?: string | null;
   torre?: string | null;
   piso?: number | null;
-  tipo: string;
   area_m2?: number | null;
-  area_privada_m2?: number | null;
-  area_comun_m2?: number | null;
-  numero_habitaciones?: number | null;
-  numero_banos?: number | null;
-  tiene_parqueadero?: boolean;
-  numero_parqueaderos?: number;
-  tiene_bodega?: boolean;
-  matricula_inmobiliaria?: string | null;
-  chip_agua?: string | null;
-  chip_gas?: string | null;
-  chip_energia?: string | null;
-  uso?: string | null;
-  estado?: string;
-  activo?: boolean;
-  created_at?: string;
-  updated_at?: string;
+  activo: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface UnidadInput {
-  conjunto_id: string;
+  conjuntoId: string;
   nombre: string;
-  numero_unidad: string;
-  torre?: string | null;
-  piso?: number | null;
-  tipo: string;
-  area_m2?: number | null;
-  area_privada_m2?: number | null;
-  area_comun_m2?: number | null;
-  numero_habitaciones?: number | null;
-  numero_banos?: number | null;
-  tiene_parqueadero?: boolean;
-  numero_parqueaderos?: number;
-  tiene_bodega?: boolean;
-  uso?: string | null;
-  estado?: string;
-  activo?: boolean;
+  descripcion?: string;
+  tipo_unidad?: TipoUnidad;
+  numero_unidad?: string;
+  torre?: string;
+  piso?: number;
+  area_m2?: number;
 }
