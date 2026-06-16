@@ -1,46 +1,63 @@
 import type { PaginationParams } from '@/shared/types'
 
-export type TipoUnidad = 'apartamento' | 'casa' | 'local' | 'parqueadero' | 'bodega' | 'otro'
-export type EstadoUnidad = 'ocupado' | 'desocupado' | 'en_mora' | 'bloqueado'
+export type TipoUnidad =
+  | 'apartamento'
+  | 'casa'
+  | 'local_comercial'
+  | 'oficina'
+  | 'bodega'
+  | 'parqueadero'
+  | 'otro'
 
 export interface Unidad {
   id: string
-  tenant_id: string
-  conjunto_id: string
   nombre: string
-  tipo: TipoUnidad
-  estado: EstadoUnidad
+  descripcion?: string
+  conjunto_id: string
+  conjunto_nombre?: string
+  tipo_unidad?: TipoUnidad
+  numero_unidad?: string
   piso?: number
   area_m2?: number
-  coeficiente?: number
   activo: boolean
   created_at: string
   updated_at: string
 }
 
 export interface UnidadCreateInput {
-  conjunto_id: string
+  conjuntoId: string
   nombre: string
-  tipo: TipoUnidad
-  estado?: EstadoUnidad
+  descripcion?: string
+  tipo_unidad?: TipoUnidad
+  numero_unidad?: string
   piso?: number
   area_m2?: number
-  coeficiente?: number
 }
 
 export interface UnidadUpdateInput {
   nombre?: string
-  tipo?: TipoUnidad
-  estado?: EstadoUnidad
+  descripcion?: string
+  tipo_unidad?: TipoUnidad
+  numero_unidad?: string
   piso?: number
   area_m2?: number
-  coeficiente?: number
   activo?: boolean
 }
 
 export interface UnidadQuery extends PaginationParams {
-  conjunto_id?: string
-  tipo?: TipoUnidad
-  estado?: EstadoUnidad
+  search?: string
+  conjuntoId?: string
+  tipo_unidad?: TipoUnidad
   activo?: boolean
+  piso?: number
+}
+
+export const TIPO_UNIDAD_LABELS: Record<TipoUnidad, string> = {
+  apartamento:    'Apartamento',
+  casa:           'Casa',
+  local_comercial:'Local comercial',
+  oficina:        'Oficina',
+  bodega:         'Bodega',
+  parqueadero:    'Parqueadero',
+  otro:           'Otro',
 }

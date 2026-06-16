@@ -11,8 +11,9 @@ export const unidadesApi = {
     return http.get<Unidad>(`/unidades/${id}`)
   },
 
-  listByConjunto(conjuntoId: string, params?: UnidadQuery) {
-    return http.get<PaginatedResponse<Unidad>>(`/conjuntos/${conjuntoId}/unidades`, { params })
+  // El backend retorna Unidad[] directo (no paginado)
+  listByConjunto(conjuntoId: string) {
+    return http.get<Unidad[]>(`/conjuntos/${conjuntoId}/unidades`)
   },
 
   create(body: UnidadCreateInput) {
@@ -28,6 +29,6 @@ export const unidadesApi = {
   },
 
   remove(id: string) {
-    return http.delete<{ ok: boolean }>(`/unidades/${id}`)
+    return http.delete<void>(`/unidades/${id}`)
   },
 }

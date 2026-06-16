@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { unidadesApi } from '../api/unidades.api'
 import type { Unidad, UnidadCreateInput, UnidadUpdateInput, UnidadQuery } from '../types/unidades.types'
 
@@ -8,8 +8,14 @@ export const useUnidadesStore = defineStore('unidades', () => {
   const current = ref<Unidad | null>(null)
   const total   = ref(0)
   const page    = ref(1)
+  const limit   = ref(20)
   const loading = ref(false)
   const error   = ref<string | null>(null)
+
+  // El backend (PaginatedResponse<T>) solo devuelve total/page/limit,
+  // no un campo "pages" — lo calculamos en el frontend para no depender
+  // de que la API lo agregue ni de mutar manualmente un ref desincronizado.
+  const pages = computed(() => Math.max(1, Math.ceil(total.value / (limit.value || 1))))
 
   async function fetchList(params?: UnidadQuery) {
     loading.value = true
@@ -19,6 +25,7 @@ export const useUnidadesStore = defineStore('unidades', () => {
       list.value  = data.data
       total.value = data.total
       page.value  = data.page
+      limit.value = data.limit
     } catch (e: any) {
       error.value = e.response?.data?.message ?? 'Error al cargar unidades'
     } finally {
@@ -26,14 +33,18 @@ export const useUnidadesStore = defineStore('unidades', () => {
     }
   }
 
-  async function fetchByConjunto(conjuntoId: string, params?: UnidadQuery) {
+  // unidadesApi.listByConjunto devuelve Unidad[] directo, sin paginar
+  // (ver el comentario en unidades.api.ts) — no intentamos leer
+  // data.data/data.total/data.page porque ese shape no existe aquí.
+  async function fetchByConjunto(conjuntoId: string) {
     loading.value = true
     error.value = null
     try {
-      const { data } = await unidadesApi.listByConjunto(conjuntoId, params)
-      list.value  = data.data
-      total.value = data.total
-      page.value  = data.page
+      const { data } = await unidadesApi.listByConjunto(conjuntoId)
+      list.value  = data
+      total.value = data.length
+      page.value  = 1
+      limit.value = Math.max(data.length, 1)
     } catch (e: any) {
       error.value = e.response?.data?.message ?? 'Error al cargar unidades del conjunto'
     } finally {
@@ -68,6 +79,14 @@ export const useUnidadesStore = defineStore('unidades', () => {
     return data
   }
 
+  async function deactivate(id: string) {
+    const { data } = await unidadesApi.deactivate(id)
+    const idx = list.value.findIndex((u) => u.id === id)
+    if (idx !== -1) list.value[idx] = data
+    if (current.value?.id === id) current.value = data
+    return data
+  }
+
   async function remove(id: string) {
     await unidadesApi.remove(id)
     list.value = list.value.filter((u) => u.id !== id)
@@ -79,11 +98,12 @@ export const useUnidadesStore = defineStore('unidades', () => {
     current.value = null
     total.value   = 0
     page.value    = 1
+    limit.value   = 20
     error.value   = null
   }
 
   return {
-    list, current, total, page, loading, error,
-    fetchList, fetchByConjunto, fetchById, create, update, remove, reset,
+    list, current, total, page, limit, pages, loading, error,
+    fetchList, fetchByConjunto, fetchById, create, update, deactivate, remove, reset,
   }
 })

@@ -19,11 +19,11 @@ export function useUnidades() {
     }
   }
 
-  async function cargarPorConjunto(conjuntoId: string, params?: UnidadQuery) {
+  async function cargarPorConjunto(conjuntoId: string) {
     loading.value = true
     error.value   = null
     try {
-      await store.fetchByConjunto(conjuntoId, params)
+      await store.fetchByConjunto(conjuntoId)
     } catch (e: any) {
       error.value = e.response?.data?.message ?? 'Error al cargar unidades'
     } finally {
@@ -50,6 +50,7 @@ export function useUnidades() {
       return await store.create(input)
     } catch (e: any) {
       error.value = e.response?.data?.message ?? 'Error al crear unidad'
+      throw e
     } finally {
       loading.value = false
     }
@@ -62,6 +63,20 @@ export function useUnidades() {
       return await store.update(id, input)
     } catch (e: any) {
       error.value = e.response?.data?.message ?? 'Error al actualizar unidad'
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function desactivar(id: string) {
+    loading.value = true
+    error.value   = null
+    try {
+      return await store.deactivate(id)
+    } catch (e: any) {
+      error.value = e.response?.data?.message ?? 'Error al desactivar unidad'
+      throw e
     } finally {
       loading.value = false
     }
@@ -74,6 +89,7 @@ export function useUnidades() {
       await store.remove(id)
     } catch (e: any) {
       error.value = e.response?.data?.message ?? 'Error al eliminar unidad'
+      throw e
     } finally {
       loading.value = false
     }
@@ -83,6 +99,7 @@ export function useUnidades() {
     list:    store.list,
     current: store.current,
     total:   store.total,
+    pages:   store.pages,
     loading,
     error,
     cargarLista,
@@ -90,6 +107,7 @@ export function useUnidades() {
     cargarPorId,
     crear,
     actualizar,
+    desactivar,
     eliminar,
   }
 }
