@@ -26,23 +26,54 @@ export interface NewUserInput {
   unidadId?: string | null;
 }
 
+export type TipoConjunto = 'edificio' | 'casa' | 'ciudadela' | 'condominio' | 'otro';
+
 export interface Conjunto {
   id: string;
-  tenant_id?: string | null;
+  tenant_id: string;
   nombre: string;
   direccion: string;
   ciudad?: string | null;
-  tipo_conjunto?: string | null;
-  activo?: boolean;
-  created_at?: string;
+  departamento?: string | null;
+  pais?: string | null;
+  codigo_catastral?: string | null;
+  tipo_conjunto: TipoConjunto;
+  numero_torres?: number | null;
+  numero_unidades?: number | null;
+  anio_construccion?: number | null;
+  area_total_m2?: number | null;
+  area_comun_m2?: number | null;
+  administrador_nombre?: string | null;
+  administrador_email?: string | null;
+  administrador_telefono?: string | null;
+  telefono_emergencia?: string | null;
+  email_contacto?: string | null;
+  logo_url?: string | null;
+  activo: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ConjuntoInput {
-  tenantId?: string | null;
+  tenantId: string;
   nombre: string;
   direccion: string;
   ciudad?: string | null;
-  tipo_conjunto?: string | null;
+  departamento?: string | null;
+  pais?: string | null;
+  codigo_catastral?: string | null;
+  tipo_conjunto: TipoConjunto;
+  numero_torres?: number | null;
+  numero_unidades?: number | null;
+  anio_construccion?: number | null;
+  area_total_m2?: number | null;
+  area_comun_m2?: number | null;
+  administrador_nombre?: string | null;
+  administrador_email?: string | null;
+  administrador_telefono?: string | null;
+  telefono_emergencia?: string | null;
+  email_contacto?: string | null;
+  logo_url?: string | null;
 }
 
 export interface Asamblea {

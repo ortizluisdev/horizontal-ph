@@ -1,6 +1,13 @@
-import { ConjuntoRepository, type PaginatedConjuntos } from "./conjunto.repository.js";
-import type { Conjunto } from "@horizontal-ph/types";
-import type { ConjuntoCreateInput, ConjuntoUpdateInput, ConjuntoQuery } from "./conjunto.schema.js";
+import {
+  ConjuntoRepository,
+  type PaginatedConjuntos,
+} from './conjunto.repository.js';
+import type { Conjunto } from '@horizontal-ph/types';
+import type {
+  ConjuntoCreateInput,
+  ConjuntoUpdateInput,
+  ConjuntoQuery,
+} from './conjunto.schema.js';
 
 const repo = new ConjuntoRepository();
 
@@ -20,10 +27,13 @@ export class ConjuntoService {
   // ── Create ────────────────────────────────────────────────────────────────
 
   async create(data: ConjuntoCreateInput): Promise<Conjunto> {
-    const duplicate = await repo.existsByTenantAndNombre(data.tenantId, data.nombre);
+    const duplicate = await repo.existsByTenantAndNombre(
+      data.tenantId,
+      data.nombre
+    );
     if (duplicate) {
       throw Object.assign(
-        new Error("Ya existe un conjunto con ese nombre en este tenant"),
+        new Error('Ya existe un conjunto con ese nombre en este tenant'),
         { statusCode: 409 }
       );
     }
@@ -35,18 +45,21 @@ export class ConjuntoService {
   async update(id: string, data: ConjuntoUpdateInput): Promise<Conjunto> {
     const existing = await repo.findById(id);
     if (!existing) {
-      throw Object.assign(new Error("Conjunto no encontrado"), { statusCode: 404 });
+      throw Object.assign(
+        new Error('Conjunto no encontrado'),
+        { statusCode: 404 }
+      );
     }
 
     if (data.nombre && data.nombre !== existing.nombre) {
       const duplicate = await repo.existsByTenantAndNombre(
-        (existing as any).tenant_id,
+        existing.tenant_id,
         data.nombre,
         id
       );
       if (duplicate) {
         throw Object.assign(
-          new Error("Ya existe un conjunto con ese nombre en este tenant"),
+          new Error('Ya existe un conjunto con ese nombre en este tenant'),
           { statusCode: 409 }
         );
       }
@@ -60,7 +73,10 @@ export class ConjuntoService {
   async deactivate(id: string): Promise<Conjunto> {
     const result = await repo.deactivate(id);
     if (!result) {
-      throw Object.assign(new Error("Conjunto no encontrado"), { statusCode: 404 });
+      throw Object.assign(
+        new Error('Conjunto no encontrado'),
+        { statusCode: 404 }
+      );
     }
     return result;
   }
@@ -70,7 +86,10 @@ export class ConjuntoService {
   async remove(id: string): Promise<void> {
     const exists = await repo.findById(id);
     if (!exists) {
-      throw Object.assign(new Error("Conjunto no encontrado"), { statusCode: 404 });
+      throw Object.assign(
+        new Error('Conjunto no encontrado'),
+        { statusCode: 404 }
+      );
     }
     await repo.remove(id);
   }

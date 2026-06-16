@@ -1,6 +1,11 @@
 import http from '@/shared/lib/http'
 import type { PaginatedResponse } from '@/shared/types'
-import type { Conjunto, ConjuntoCreateInput, ConjuntoUpdateInput, ConjuntoQuery } from '../types/conjuntos.types'
+import type {
+  Conjunto,
+  ConjuntoCreateInput,
+  ConjuntoUpdateInput,
+  ConjuntoQuery,
+} from '../types/conjuntos.types'
 
 export const conjuntosApi = {
   list(params?: ConjuntoQuery) {
@@ -24,6 +29,6 @@ export const conjuntosApi = {
   },
 
   remove(id: string) {
-    return http.delete<{ ok: boolean }>(`/conjuntos/${id}`)
+    return http.delete<void>(`/conjuntos/${id}`)
   },
 }

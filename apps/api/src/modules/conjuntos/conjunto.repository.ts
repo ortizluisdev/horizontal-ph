@@ -1,6 +1,10 @@
-import { pool } from "../../core/database/pg.client.js";
-import type { Conjunto } from "@horizontal-ph/types";
-import type { ConjuntoCreateInput, ConjuntoUpdateInput, ConjuntoQuery } from "./conjunto.schema.js";
+import { pool } from '../../core/database/pg.client.js';
+import type { Conjunto } from '@horizontal-ph/types';
+import type {
+  ConjuntoCreateInput,
+  ConjuntoUpdateInput,
+  ConjuntoQuery,
+} from './conjunto.schema.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -12,10 +16,21 @@ export interface PaginatedConjuntos {
   pages: number;
 }
 
+// ─── Columnas a seleccionar (alineadas con la migración 002) ─────────────────
+
+const SELECT_COLS = `
+  id, tenant_id, nombre, direccion, ciudad, departamento, pais,
+  codigo_catastral, tipo_conjunto, numero_torres, numero_unidades,
+  anio_construccion, area_total_m2, area_comun_m2,
+  administrador_nombre, administrador_email, administrador_telefono,
+  telefono_emergencia, email_contacto, logo_url,
+  activo, created_at, updated_at
+`;
+
 // ─── Repository ───────────────────────────────────────────────────────────────
 
 export class ConjuntoRepository {
-  // ── List with pagination + filters ───────────────────────────────────────
+  // ── List con paginación + filtros ─────────────────────────────────────────
 
   async list(query: ConjuntoQuery): Promise<PaginatedConjuntos> {
     const { page, limit, search, tipo_conjunto, activo } = query;
@@ -41,12 +56,11 @@ export class ConjuntoRepository {
       values.push(activo);
     }
 
-    const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
     const [dataRes, countRes] = await Promise.all([
       pool.query<Conjunto>(
-        `SELECT id, nombre, direccion, ciudad, tipo_conjunto, activo,
-                tenant_id, created_at, updated_at
+        `SELECT ${SELECT_COLS}
          FROM conjuntos
          ${where}
          ORDER BY created_at DESC
@@ -74,8 +88,7 @@ export class ConjuntoRepository {
 
   async findById(id: string): Promise<Conjunto | null> {
     const res = await pool.query<Conjunto>(
-      `SELECT id, nombre, direccion, ciudad, tipo_conjunto, activo,
-              tenant_id, created_at, updated_at
+      `SELECT ${SELECT_COLS}
        FROM conjuntos
        WHERE id = $1
        LIMIT 1`,
@@ -88,15 +101,35 @@ export class ConjuntoRepository {
 
   async create(data: ConjuntoCreateInput): Promise<Conjunto> {
     const res = await pool.query<{ id: string }>(
-      `INSERT INTO conjuntos (tenant_id, nombre, direccion, ciudad, tipo_conjunto)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO conjuntos (
+         tenant_id, nombre, direccion, ciudad, departamento, pais,
+         codigo_catastral, tipo_conjunto, numero_torres, numero_unidades,
+         anio_construccion, area_total_m2, area_comun_m2,
+         administrador_nombre, administrador_email, administrador_telefono,
+         telefono_emergencia, email_contacto, logo_url
+       )
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
        RETURNING id`,
       [
         data.tenantId,
         data.nombre,
         data.direccion,
-        data.ciudad        ?? null,
-        data.tipo_conjunto ?? null,
+        data.ciudad              ?? null,
+        data.departamento        ?? null,
+        data.pais                ?? 'Colombia',
+        data.codigo_catastral    ?? null,
+        data.tipo_conjunto,
+        data.numero_torres       ?? null,
+        data.numero_unidades     ?? null,
+        data.anio_construccion   ?? null,
+        data.area_total_m2       ?? null,
+        data.area_comun_m2       ?? null,
+        data.administrador_nombre     ?? null,
+        data.administrador_email      ?? null,
+        data.administrador_telefono   ?? null,
+        data.telefono_emergencia      ?? null,
+        data.email_contacto           ?? null,
+        data.logo_url                 ?? null,
       ]
     );
     return (await this.findById(res.rows[0].id)) as Conjunto;
@@ -105,15 +138,21 @@ export class ConjuntoRepository {
   // ── Update ────────────────────────────────────────────────────────────────
 
   async update(id: string, data: ConjuntoUpdateInput): Promise<Conjunto | null> {
-    const sets: string[]   = [];
+    const updatableFields: (keyof ConjuntoUpdateInput)[] = [
+      'nombre', 'direccion', 'ciudad', 'departamento', 'pais',
+      'codigo_catastral', 'tipo_conjunto',
+      'numero_torres', 'numero_unidades', 'anio_construccion',
+      'area_total_m2', 'area_comun_m2',
+      'administrador_nombre', 'administrador_email', 'administrador_telefono',
+      'telefono_emergencia', 'email_contacto', 'logo_url',
+      'activo',
+    ];
+
+    const sets: string[]    = [];
     const values: unknown[] = [];
     let idx = 1;
 
-    const fields: (keyof ConjuntoUpdateInput)[] = [
-      "nombre", "direccion", "ciudad", "tipo_conjunto", "activo",
-    ];
-
-    for (const field of fields) {
+    for (const field of updatableFields) {
       if (data[field] !== undefined) {
         sets.push(`${field} = $${idx++}`);
         values.push(data[field]);
@@ -122,11 +161,11 @@ export class ConjuntoRepository {
 
     if (sets.length === 0) return this.findById(id);
 
-    sets.push("updated_at = now()");
+    sets.push('updated_at = now()');
     values.push(id);
 
     await pool.query(
-      `UPDATE conjuntos SET ${sets.join(", ")} WHERE id = $${idx}`,
+      `UPDATE conjuntos SET ${sets.join(', ')} WHERE id = $${idx}`,
       values
     );
 
@@ -154,7 +193,7 @@ export class ConjuntoRepository {
     return (res.rowCount ?? 0) > 0;
   }
 
-  // ── Exists check ─────────────────────────────────────────────────────────
+  // ── Exists check ──────────────────────────────────────────────────────────
 
   async existsByTenantAndNombre(
     tenantId: string,
@@ -166,7 +205,7 @@ export class ConjuntoRepository {
          SELECT 1 FROM conjuntos
          WHERE tenant_id = $1
            AND LOWER(nombre) = LOWER($2)
-           ${excludeId ? "AND id <> $3" : ""}
+           ${excludeId ? 'AND id <> $3' : ''}
        ) AS exists`,
       excludeId ? [tenantId, nombre, excludeId] : [tenantId, nombre]
     );

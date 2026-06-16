@@ -1,17 +1,25 @@
 import { useConjuntosStore } from '../store/conjuntos.store'
+import { storeToRefs } from 'pinia'
 import { ref } from 'vue'
-import type { ConjuntoCreateInput, ConjuntoUpdateInput, ConjuntoQuery } from '../types/conjuntos.types'
+import type {
+  ConjuntoCreateInput,
+  ConjuntoUpdateInput,
+  ConjuntoQuery,
+} from '../types/conjuntos.types'
 
 export function useConjuntos() {
   const store = useConjuntosStore()
+  const { list, current, total, page, pages, limit, loading: storeLoading } = storeToRefs(store)
+
   const loading = ref(false)
-  const error = ref<string | null>(null)
+  const error   = ref<string | null>(null)
 
   async function cargarLista(params?: ConjuntoQuery) {
     loading.value = true
-    error.value = null
+    error.value   = null
     try {
       await store.fetchList(params)
+      if (store.error) error.value = store.error
     } catch (e: any) {
       error.value = e.response?.data?.message ?? 'Error al cargar conjuntos'
     } finally {
@@ -21,11 +29,12 @@ export function useConjuntos() {
 
   async function cargarPorId(id: string) {
     loading.value = true
-    error.value = null
+    error.value   = null
     try {
       await store.fetchById(id)
+      if (store.error) error.value = store.error
     } catch (e: any) {
-      error.value = e.response?.data?.message ?? 'Error al cargar conjunto'
+      error.value = e.response?.data?.message ?? 'Error al cargar el conjunto'
     } finally {
       loading.value = false
     }
@@ -33,11 +42,12 @@ export function useConjuntos() {
 
   async function crear(input: ConjuntoCreateInput) {
     loading.value = true
-    error.value = null
+    error.value   = null
     try {
       return await store.create(input)
     } catch (e: any) {
-      error.value = e.response?.data?.message ?? 'Error al crear conjunto'
+      error.value = e.response?.data?.message ?? 'Error al crear el conjunto'
+      return null
     } finally {
       loading.value = false
     }
@@ -45,11 +55,12 @@ export function useConjuntos() {
 
   async function actualizar(id: string, input: ConjuntoUpdateInput) {
     loading.value = true
-    error.value = null
+    error.value   = null
     try {
       return await store.update(id, input)
     } catch (e: any) {
-      error.value = e.response?.data?.message ?? 'Error al actualizar conjunto'
+      error.value = e.response?.data?.message ?? 'Error al actualizar el conjunto'
+      return null
     } finally {
       loading.value = false
     }
@@ -57,21 +68,23 @@ export function useConjuntos() {
 
   async function eliminar(id: string) {
     loading.value = true
-    error.value = null
+    error.value   = null
     try {
       await store.remove(id)
     } catch (e: any) {
-      error.value = e.response?.data?.message ?? 'Error al eliminar conjunto'
+      error.value = e.response?.data?.message ?? 'Error al eliminar el conjunto'
     } finally {
       loading.value = false
     }
   }
 
   return {
-    list: store.list,
-    current: store.current,
-    total: store.total,
-    page: store.page,
+    list,
+    current,
+    total,
+    page,
+    pages,
+    limit,
     loading,
     error,
     cargarLista,
