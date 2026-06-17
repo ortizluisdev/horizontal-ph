@@ -12,17 +12,36 @@ export interface PaginatedUnidades {
   pages: number;
 }
 
+// ─── Columnas seguras que existen en la tabla ────────────────────────────────
+// Mantenerlas aquí evita que un typo en un string SQL pase desapercibido.
+
+const SELECT_COLS = `
+  u.id,
+  u.nombre,
+  u.descripcion,
+  u.conjunto_id,
+  c.nombre   AS conjunto_nombre,
+  u.tipo_unidad,
+  u.numero_unidad,
+  u.piso,
+  u.area_m2,
+  u.activo,
+  u.created_at,
+  u.updated_at
+`;
+
 // ─── Repository ───────────────────────────────────────────────────────────────
 
 export class UnidadRepository {
-  // ── List with pagination + filters ───────────────────────────────────────
+
+  // ── List with pagination + filters ─────────────────────────────────────────
 
   async list(query: UnidadQuery): Promise<PaginatedUnidades> {
     const { page, limit, search, conjuntoId, tipo_unidad, activo, piso } = query;
     const offset = (page - 1) * limit;
 
     const conditions: string[] = [];
-    const values: unknown[]    = [];
+    const values:     unknown[] = [];
     let idx = 1;
 
     if (search) {
@@ -51,18 +70,17 @@ export class UnidadRepository {
 
     const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 
+    const dataIdx  = idx++;
+    const offsetIdx = idx++;
+
     const [dataRes, countRes] = await Promise.all([
       pool.query<Unidad>(
-        `SELECT
-           u.id, u.nombre, u.descripcion,
-           u.conjunto_id, c.nombre AS conjunto_nombre,
-           u.tipo_unidad, u.numero_unidad, u.piso, u.area_m2,
-           u.activo, u.created_at, u.updated_at
-         FROM unidades u
-         LEFT JOIN conjuntos c ON c.id = u.conjunto_id
+        `SELECT ${SELECT_COLS}
+         FROM   unidades u
+         LEFT   JOIN conjuntos c ON c.id = u.conjunto_id
          ${where}
-         ORDER BY u.nombre ASC
-         LIMIT $${idx++} OFFSET $${idx++}`,
+         ORDER  BY u.nombre ASC
+         LIMIT  $${dataIdx} OFFSET $${offsetIdx}`,
         [...values, limit, offset]
       ),
       pool.query<{ total: string }>(
@@ -82,25 +100,21 @@ export class UnidadRepository {
     };
   }
 
-  // ── Find one ──────────────────────────────────────────────────────────────
+  // ── Find one ────────────────────────────────────────────────────────────────
 
   async findById(id: string): Promise<Unidad | null> {
     const res = await pool.query<Unidad>(
-      `SELECT
-         u.id, u.nombre, u.descripcion,
-         u.conjunto_id, c.nombre AS conjunto_nombre,
-         u.tipo_unidad, u.numero_unidad, u.piso, u.area_m2,
-         u.activo, u.created_at, u.updated_at
-       FROM unidades u
-       LEFT JOIN conjuntos c ON c.id = u.conjunto_id
-       WHERE u.id = $1
-       LIMIT 1`,
+      `SELECT ${SELECT_COLS}
+       FROM   unidades u
+       LEFT   JOIN conjuntos c ON c.id = u.conjunto_id
+       WHERE  u.id = $1
+       LIMIT  1`,
       [id]
     );
     return res.rows[0] ?? null;
   }
 
-  // ── Create ────────────────────────────────────────────────────────────────
+  // ── Create ──────────────────────────────────────────────────────────────────
 
   async create(data: UnidadCreateInput): Promise<Unidad> {
     const res = await pool.query<{ id: string }>(
@@ -121,10 +135,10 @@ export class UnidadRepository {
     return (await this.findById(res.rows[0].id)) as Unidad;
   }
 
-  // ── Update ────────────────────────────────────────────────────────────────
+  // ── Update ──────────────────────────────────────────────────────────────────
 
   async update(id: string, data: UnidadUpdateInput): Promise<Unidad | null> {
-    const sets: string[]    = [];
+    const sets:   string[]  = [];
     const values: unknown[] = [];
     let idx = 1;
 
@@ -152,7 +166,7 @@ export class UnidadRepository {
     return this.findById(id);
   }
 
-  // ── Soft delete ───────────────────────────────────────────────────────────
+  // ── Soft delete ─────────────────────────────────────────────────────────────
 
   async deactivate(id: string): Promise<Unidad | null> {
     const res = await pool.query(
@@ -163,14 +177,14 @@ export class UnidadRepository {
     return this.findById(id);
   }
 
-  // ── Hard delete ───────────────────────────────────────────────────────────
+  // ── Hard delete ─────────────────────────────────────────────────────────────
 
   async remove(id: string): Promise<boolean> {
     const res = await pool.query(`DELETE FROM unidades WHERE id = $1`, [id]);
     return (res.rowCount ?? 0) > 0;
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
+  // ── Helpers ─────────────────────────────────────────────────────────────────
 
   async existsByConjuntoAndNumero(
     conjuntoId: string,
@@ -180,8 +194,8 @@ export class UnidadRepository {
     const res = await pool.query<{ exists: boolean }>(
       `SELECT EXISTS (
          SELECT 1 FROM unidades
-         WHERE conjunto_id = $1
-           AND LOWER(numero_unidad) = LOWER($2)
+         WHERE  conjunto_id = $1
+           AND  LOWER(numero_unidad) = LOWER($2)
            ${excludeId ? "AND id <> $3" : ""}
        ) AS exists`,
       excludeId ? [conjuntoId, numero_unidad, excludeId] : [conjuntoId, numero_unidad]
@@ -195,9 +209,9 @@ export class UnidadRepository {
          u.id, u.nombre, u.descripcion,
          u.conjunto_id, u.tipo_unidad, u.numero_unidad, u.piso, u.area_m2,
          u.activo, u.created_at, u.updated_at
-       FROM unidades u
+       FROM  unidades u
        WHERE u.conjunto_id = $1
-       ORDER BY u.piso ASC, u.nombre ASC`,
+       ORDER BY u.piso ASC NULLS LAST, u.nombre ASC`,
       [conjuntoId]
     );
     return res.rows;

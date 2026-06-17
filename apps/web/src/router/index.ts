@@ -15,12 +15,20 @@ const router = createRouter({
       component: () => import('@/shared/components/layout/AppShell.vue'),
       children: [
         { path: '', component: () => import('@/modules/dashboard/views/DashboardView.vue') },
+
+        // Conjuntos
         { path: 'conjuntos', component: () => import('@/modules/conjuntos/views/ConjuntosListView.vue') },
         { path: 'conjuntos/nuevo', component: () => import('@/modules/conjuntos/views/ConjuntoFormView.vue') },
         { path: 'conjuntos/:id', component: () => import('@/modules/conjuntos/views/ConjuntoDetailView.vue') },
         { path: 'conjuntos/:id/editar', component: () => import('@/modules/conjuntos/views/ConjuntoFormView.vue') },
+
+        // Unidades — ⚠️ 'nuevo' y ':id/editar' deben ir ANTES de ':id'
         { path: 'unidades', component: () => import('@/modules/unidades/views/UnidadesListView.vue') },
+        { path: 'unidades/nuevo', component: () => import('@/modules/unidades/views/UnidadFormView.vue') },
+        { path: 'unidades/:id/editar', component: () => import('@/modules/unidades/views/UnidadFormView.vue') },
         { path: 'unidades/:id', component: () => import('@/modules/unidades/views/UnidadDetailView.vue') },
+
+        // Resto de módulos
         { path: 'cobranza', component: () => import('@/modules/cobranza/views/FacturasView.vue') },
         { path: 'pqrs', component: () => import('@/modules/pqrs/views/PqrsListView.vue') },
         { path: 'asambleas', component: () => import('@/modules/asambleas/views/AsambleasListView.vue') },

@@ -11,7 +11,6 @@ export const unidadesApi = {
     return http.get<Unidad>(`/unidades/${id}`)
   },
 
-  // El backend retorna Unidad[] directo (no paginado)
   listByConjunto(conjuntoId: string) {
     return http.get<Unidad[]>(`/conjuntos/${conjuntoId}/unidades`)
   },

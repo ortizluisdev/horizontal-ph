@@ -34,7 +34,7 @@
       </div>
     </div>
 
-    <template v-else-if="store.current">
+    <template v-else-if="unidad">
 
       <!-- Card principal -->
       <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 sm:p-6 space-y-6">
@@ -42,22 +42,22 @@
         <!-- Nombre, tipo y badges -->
         <div class="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h2 class="text-xl sm:text-2xl font-bold text-gray-900">{{ store.current.nombre }}</h2>
-            <p v-if="store.current.numero_unidad" class="text-sm text-gray-400 mt-0.5">
-              # {{ store.current.numero_unidad }}
+            <h2 class="text-xl sm:text-2xl font-bold text-gray-900">{{ unidad.nombre }}</h2>
+            <p v-if="unidad.numero_unidad" class="text-sm text-gray-400 mt-0.5">
+              # {{ unidad.numero_unidad }}
             </p>
             <p class="text-sm text-gray-500 mt-1">
-              {{ store.current.tipo_unidad ? TIPO_UNIDAD_LABELS[store.current.tipo_unidad] : 'Sin tipo definido' }}
+              {{ unidad.tipo_unidad ? TIPO_UNIDAD_LABELS[unidad.tipo_unidad] : 'Sin tipo definido' }}
             </p>
-            <p v-if="store.current.descripcion" class="text-sm text-gray-400 mt-1 max-w-md">
-              {{ store.current.descripcion }}
+            <p v-if="unidad.descripcion" class="text-sm text-gray-400 mt-1 max-w-md">
+              {{ unidad.descripcion }}
             </p>
           </div>
           <span
-            :class="store.current.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'"
+            :class="unidad.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'"
             class="text-xs font-semibold px-3 py-1.5 rounded-full"
           >
-            {{ store.current.activo ? '● Activa' : '● Inactiva' }}
+            {{ unidad.activo ? '● Activa' : '● Inactiva' }}
           </span>
         </div>
 
@@ -65,19 +65,19 @@
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 bg-gray-50 rounded-xl p-4">
           <div class="text-center">
             <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Piso</p>
-            <p class="text-2xl font-bold text-gray-900 mt-1">{{ store.current.piso ?? '—' }}</p>
+            <p class="text-2xl font-bold text-gray-900 mt-1">{{ unidad.piso ?? '—' }}</p>
           </div>
           <div class="text-center border-x border-gray-200">
             <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Área</p>
             <p class="text-2xl font-bold text-gray-900 mt-1">
-              {{ store.current.area_m2 ?? '—' }}
-              <span v-if="store.current.area_m2" class="text-sm font-normal text-gray-500">m²</span>
+              {{ unidad.area_m2 ?? '—' }}
+              <span v-if="unidad.area_m2" class="text-sm font-normal text-gray-500">m²</span>
             </p>
           </div>
           <div class="text-center col-span-2 sm:col-span-1 border-t sm:border-t-0 border-gray-200 pt-3 sm:pt-0">
             <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Conjunto</p>
             <p class="text-sm font-semibold text-gray-900 mt-1 truncate px-2">
-              {{ store.current.conjunto_nombre ?? '—' }}
+              {{ unidad.conjunto_nombre ?? '—' }}
             </p>
           </div>
         </div>
@@ -89,22 +89,22 @@
             <div>
               <dt class="text-xs text-gray-400">ID de unidad</dt>
               <dd class="mt-0.5 text-xs font-mono text-gray-700 bg-gray-50 rounded px-2 py-1 break-all select-all">
-                {{ store.current.id }}
+                {{ unidad.id }}
               </dd>
             </div>
             <div>
               <dt class="text-xs text-gray-400">ID de conjunto</dt>
               <dd class="mt-0.5 text-xs font-mono text-gray-700 bg-gray-50 rounded px-2 py-1 break-all select-all">
-                {{ store.current.conjunto_id }}
+                {{ unidad.conjunto_id }}
               </dd>
             </div>
             <div>
               <dt class="text-xs text-gray-400">Fecha de creación</dt>
-              <dd class="mt-0.5 text-sm text-gray-900">{{ formatDate(store.current.created_at) }}</dd>
+              <dd class="mt-0.5 text-sm text-gray-900">{{ formatDate(unidad.created_at) }}</dd>
             </div>
             <div>
               <dt class="text-xs text-gray-400">Última actualización</dt>
-              <dd class="mt-0.5 text-sm text-gray-900">{{ formatDate(store.current.updated_at) }}</dd>
+              <dd class="mt-0.5 text-sm text-gray-900">{{ formatDate(unidad.updated_at) }}</dd>
             </div>
           </dl>
         </div>
@@ -113,7 +113,7 @@
       <!-- Acciones -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <router-link
-          :to="`/unidades/${store.current.id}/editar`"
+          :to="`/unidades/${unidad.id}/editar`"
           class="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -129,10 +129,10 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
           </svg>
-          {{ store.current.activo ? 'Desactivar' : 'Activar' }}
+          {{ accionando ? 'Procesando...' : (unidad.activo ? 'Desactivar' : 'Activar') }}
         </button>
         <router-link
-          :to="`/conjuntos/${store.current.conjunto_id}`"
+          :to="`/conjuntos/${unidad.conjunto_id}`"
           class="flex items-center justify-center gap-2 border border-gray-300 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-colors"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -162,7 +162,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUnidadesStore } from '../store/unidades.store'
 import { TIPO_UNIDAD_LABELS } from '../types/unidades.types'
@@ -173,6 +173,9 @@ const store  = useUnidadesStore()
 
 const accionando = ref(false)
 
+// ── Computed local para que Vue detecte cambios reactivos en store.current ──
+const unidad = computed(() => store.current)
+
 onMounted(() => store.fetchById(route.params.id as string))
 
 function formatDate(iso: string) {
@@ -180,23 +183,33 @@ function formatDate(iso: string) {
 }
 
 async function onDesactivar() {
-  if (!store.current) return
-  const accion = store.current.activo ? 'desactivar' : 'activar'
-  if (!confirm(`¿${accion.charAt(0).toUpperCase() + accion.slice(1)} la unidad "${store.current.nombre}"?`)) return
+  if (!unidad.value) return
+  const accion = unidad.value.activo ? 'desactivar' : 'activar'
+  if (!confirm(`¿${accion.charAt(0).toUpperCase() + accion.slice(1)} la unidad "${unidad.value.nombre}"?`)) return
+
   accionando.value = true
   try {
-    await store.deactivate(store.current.id)
+    if (unidad.value.activo) {
+      // Desactivar via endpoint dedicado
+      await store.deactivate(unidad.value.id)
+    } else {
+      // Reactivar via PATCH update con activo: true
+      await store.update(unidad.value.id, { activo: true })
+    }
+    // Refrescar desde el servidor para garantizar sincronía
+    await store.fetchById(route.params.id as string)
   } finally {
     accionando.value = false
   }
 }
 
 async function onEliminar() {
-  if (!store.current) return
-  if (!confirm(`¿Eliminar la unidad "${store.current.nombre}"? Esta acción es permanente.`)) return
+  if (!unidad.value) return
+  if (!confirm(`¿Eliminar la unidad "${unidad.value.nombre}"? Esta acción es permanente.`)) return
+
   accionando.value = true
   try {
-    await store.remove(store.current.id)
+    await store.remove(unidad.value.id)
     router.push('/unidades')
   } finally {
     accionando.value = false

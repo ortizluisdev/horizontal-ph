@@ -26,7 +26,8 @@ function handleZodError(reply: FastifyReply, err: ZodError) {
 
 function handleServiceError(reply: FastifyReply, err: unknown) {
   const e = err as any;
-  return reply.code(e?.statusCode ?? 500).send({ message: e?.message ?? "Error interno" });
+  const code = e?.statusCode ?? 500;
+  return reply.code(code).send({ message: e?.message ?? "Error interno del servidor" });
 }
 
 // ─── Handlers ─────────────────────────────────────────────────────────────────
@@ -55,7 +56,7 @@ export async function listUnidadesByConjunto(req: FastifyRequest, reply: Fastify
 
 export async function getUnidadById(req: FastifyRequest, reply: FastifyReply) {
   const params = unidadParamsSchema.safeParse(req.params);
-  if (!params.success) return handleZodError(reply, params.error);
+  if (!params.success) return reply.code(400).send({ message: params.error.errors[0]?.message ?? "ID inválido" });
 
   try {
     const item = await service.findById(params.data.id);
@@ -79,7 +80,7 @@ export async function createUnidad(req: FastifyRequest, reply: FastifyReply) {
 
 export async function updateUnidad(req: FastifyRequest, reply: FastifyReply) {
   const params = unidadParamsSchema.safeParse(req.params);
-  if (!params.success) return handleZodError(reply, params.error);
+  if (!params.success) return reply.code(400).send({ message: params.error.errors[0]?.message ?? "ID inválido" });
 
   const body = unidadUpdateSchema.safeParse(req.body);
   if (!body.success) return handleZodError(reply, body.error);
@@ -93,7 +94,7 @@ export async function updateUnidad(req: FastifyRequest, reply: FastifyReply) {
 
 export async function deactivateUnidad(req: FastifyRequest, reply: FastifyReply) {
   const params = unidadParamsSchema.safeParse(req.params);
-  if (!params.success) return handleZodError(reply, params.error);
+  if (!params.success) return reply.code(400).send({ message: params.error.errors[0]?.message ?? "ID inválido" });
 
   try {
     return reply.send(await service.deactivate(params.data.id));
@@ -104,7 +105,7 @@ export async function deactivateUnidad(req: FastifyRequest, reply: FastifyReply)
 
 export async function deleteUnidad(req: FastifyRequest, reply: FastifyReply) {
   const params = unidadParamsSchema.safeParse(req.params);
-  if (!params.success) return handleZodError(reply, params.error);
+  if (!params.success) return reply.code(400).send({ message: params.error.errors[0]?.message ?? "ID inválido" });
 
   try {
     await service.remove(params.data.id);

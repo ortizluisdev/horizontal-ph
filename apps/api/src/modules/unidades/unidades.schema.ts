@@ -41,7 +41,12 @@ export const unidadUpdateSchema = z.object({
 });
 
 export const unidadParamsSchema = z.object({
-  id: z.string().uuid("El id debe ser un UUID válido"),
+  id: z
+    .string()
+    .refine(
+      (v) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v),
+      { message: "El id debe ser un UUID válido" }
+    ),
 });
 
 export const unidadQuerySchema = z.object({

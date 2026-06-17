@@ -15,23 +15,25 @@ import {
 
 const tags = ["Unidades"];
 
-const tipoUnidadEnum = ["apartamento","casa","local_comercial","oficina","bodega","parqueadero","otro"];
+const tipoUnidadEnum = [
+  "apartamento", "casa", "local_comercial", "oficina", "bodega", "parqueadero", "otro",
+];
 
 const unidadShape = {
   type: "object",
   properties: {
-    id:               { type: "string", format: "uuid" },
-    nombre:           { type: "string" },
-    descripcion:      { type: "string" },
-    conjunto_id:      { type: "string", format: "uuid" },
-    conjunto_nombre:  { type: "string" },
-    tipo_unidad:      { type: "string" },
-    numero_unidad:    { type: "string" },
-    piso:             { type: "number" },
-    area_m2:          { type: "number" },
-    activo:           { type: "boolean" },
-    created_at:       { type: "string", format: "date-time" },
-    updated_at:       { type: "string", format: "date-time" },
+    id:              { type: "string", format: "uuid" },
+    nombre:          { type: "string" },
+    descripcion:     { type: "string", nullable: true },
+    conjunto_id:     { type: "string", format: "uuid" },
+    conjunto_nombre: { type: "string", nullable: true },
+    tipo_unidad:     { type: "string", nullable: true },
+    numero_unidad:   { type: "string", nullable: true },
+    piso:            { type: "number", nullable: true },
+    area_m2:         { type: "number", nullable: true },
+    activo:          { type: "boolean" },
+    created_at:      { type: "string", format: "date-time" },
+    updated_at:      { type: "string", format: "date-time" },
   },
 } as const;
 
@@ -68,9 +70,13 @@ const paginatedShape = {
   },
 } as const;
 
+// NOTA: el param :id se valida manualmente en el controller con Zod
+// para poder devolver 400 con mensaje legible en lugar del error de Fastify/AJV.
+// Por eso NO ponemos format:"uuid" en el params del schema de ruta.
 const idParam = {
   type: "object",
-  properties: { id: { type: "string", format: "uuid" } },
+  properties: { id: { type: "string" } },
+  required: ["id"],
 } as const;
 
 // ─── Route options ────────────────────────────────────────────────────────────
@@ -86,7 +92,7 @@ const listOpts = {
         page:        { type: "integer", minimum: 1, default: 1 },
         limit:       { type: "integer", minimum: 1, maximum: 100, default: 20 },
         search:      { type: "string" },
-        conjuntoId:  { type: "string", format: "uuid" },
+        conjuntoId:  { type: "string" },
         tipo_unidad: { type: "string", enum: tipoUnidadEnum },
         activo:      { type: "string", enum: ["true", "false"] },
         piso:        { type: "integer" },
@@ -117,6 +123,7 @@ const getByIdOpts = {
     params: idParam,
     response: {
       200: unidadShape,
+      400: errorShape,
       404: errorShape,
     },
   },
@@ -131,7 +138,7 @@ const createOpts = {
       type: "object",
       required: ["conjuntoId", "nombre"],
       properties: {
-        conjuntoId:    { type: "string", format: "uuid" },
+        conjuntoId:    { type: "string" },
         nombre:        { type: "string", minLength: 1 },
         descripcion:   { type: "string" },
         tipo_unidad:   { type: "string", enum: tipoUnidadEnum },
@@ -142,6 +149,7 @@ const createOpts = {
     },
     response: {
       201: unidadShape,
+      400: errorShape,
       409: errorShape,
       422: validationErrorShape,
     },
@@ -168,6 +176,7 @@ const updateOpts = {
     },
     response: {
       200: unidadShape,
+      400: errorShape,
       404: errorShape,
       409: errorShape,
       422: validationErrorShape,
@@ -183,6 +192,7 @@ const deactivateOpts = {
     params: idParam,
     response: {
       200: unidadShape,
+      400: errorShape,
       404: errorShape,
     },
   },
@@ -196,6 +206,7 @@ const deleteOpts = {
     params: idParam,
     response: {
       204: { type: "null" },
+      400: errorShape,
       404: errorShape,
     },
   },
@@ -210,13 +221,13 @@ const adminOnly     = [authMiddleware, permitRoles("administrador")];
 
 export default async function unidadesRoutes(app: FastifyInstance) {
   // ── Authenticated ──────────────────────────────────────────────────────────
-  app.get("/unidades",                          { ...listOpts,          preHandler: authenticated }, listUnidades);
-  app.get("/unidades/:id",                      { ...getByIdOpts,       preHandler: authenticated }, getUnidadById);
-  app.get("/conjuntos/:id/unidades",            { ...listByConjuntoOpts, preHandler: authenticated }, listUnidadesByConjunto);
+  app.get("/unidades",                 { ...listOpts,           preHandler: authenticated }, listUnidades);
+  app.get("/unidades/:id",             { ...getByIdOpts,        preHandler: authenticated }, getUnidadById);
+  app.get("/conjuntos/:id/unidades",   { ...listByConjuntoOpts, preHandler: authenticated }, listUnidadesByConjunto);
 
   // ── Admin only ─────────────────────────────────────────────────────────────
-  app.post(  "/unidades",                       { ...createOpts,        preHandler: adminOnly }, createUnidad);
-  app.patch( "/unidades/:id",                   { ...updateOpts,        preHandler: adminOnly }, updateUnidad);
-  app.patch( "/unidades/:id/desactivar",        { ...deactivateOpts,    preHandler: adminOnly }, deactivateUnidad);
-  app.delete("/unidades/:id",                   { ...deleteOpts,        preHandler: adminOnly }, deleteUnidad);
+  app.post(  "/unidades",              { ...createOpts,         preHandler: adminOnly }, createUnidad);
+  app.patch( "/unidades/:id",          { ...updateOpts,         preHandler: adminOnly }, updateUnidad);
+  app.patch( "/unidades/:id/desactivar", { ...deactivateOpts,  preHandler: adminOnly }, deactivateUnidad);
+  app.delete("/unidades/:id",          { ...deleteOpts,         preHandler: adminOnly }, deleteUnidad);
 }

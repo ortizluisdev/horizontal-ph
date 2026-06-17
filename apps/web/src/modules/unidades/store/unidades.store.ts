@@ -12,14 +12,11 @@ export const useUnidadesStore = defineStore('unidades', () => {
   const loading = ref(false)
   const error   = ref<string | null>(null)
 
-  // El backend (PaginatedResponse<T>) solo devuelve total/page/limit,
-  // no un campo "pages" — lo calculamos en el frontend para no depender
-  // de que la API lo agregue ni de mutar manualmente un ref desincronizado.
   const pages = computed(() => Math.max(1, Math.ceil(total.value / (limit.value || 1))))
 
   async function fetchList(params?: UnidadQuery) {
     loading.value = true
-    error.value = null
+    error.value   = null
     try {
       const { data } = await unidadesApi.list(params)
       list.value  = data.data
@@ -33,12 +30,9 @@ export const useUnidadesStore = defineStore('unidades', () => {
     }
   }
 
-  // unidadesApi.listByConjunto devuelve Unidad[] directo, sin paginar
-  // (ver el comentario en unidades.api.ts) — no intentamos leer
-  // data.data/data.total/data.page porque ese shape no existe aquí.
   async function fetchByConjunto(conjuntoId: string) {
     loading.value = true
-    error.value = null
+    error.value   = null
     try {
       const { data } = await unidadesApi.listByConjunto(conjuntoId)
       list.value  = data
@@ -54,12 +48,12 @@ export const useUnidadesStore = defineStore('unidades', () => {
 
   async function fetchById(id: string) {
     loading.value = true
-    error.value = null
+    error.value   = null
     try {
       const { data } = await unidadesApi.getById(id)
-      current.value = data
+      current.value  = data
     } catch (e: any) {
-      error.value = e.response?.data?.message ?? 'Error al cargar unidad'
+      error.value = e.response?.data?.message ?? 'Error al cargar la unidad'
     } finally {
       loading.value = false
     }
@@ -68,6 +62,7 @@ export const useUnidadesStore = defineStore('unidades', () => {
   async function create(input: UnidadCreateInput) {
     const { data } = await unidadesApi.create(input)
     list.value.unshift(data)
+    total.value += 1
     return data
   }
 
@@ -89,7 +84,8 @@ export const useUnidadesStore = defineStore('unidades', () => {
 
   async function remove(id: string) {
     await unidadesApi.remove(id)
-    list.value = list.value.filter((u) => u.id !== id)
+    list.value  = list.value.filter((u) => u.id !== id)
+    total.value = Math.max(0, total.value - 1)
     if (current.value?.id === id) current.value = null
   }
 
