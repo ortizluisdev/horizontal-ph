@@ -5,9 +5,11 @@ import type {
   NormativaCreatePayload,
 } from '../types/normativa.types'
 
+// ─── Catálogos ────────────────────────────────────────────────────────────────
+
 export const TIPOS_DOCUMENTO: { value: TipoDocumento; label: string; icon: string }[] = [
   { value: 'reglamento_ph',      label: 'Reglamento PH',        icon: '📜' },
-  { value: 'manual_convivencia', label: 'Manual de convivencia', icon: '🤝' },
+  { value: 'manual_convivencia', label: 'Manual convivencia',    icon: '🤝' },
   { value: 'acta_asamblea',      label: 'Acta de asamblea',     icon: '📋' },
   { value: 'resolucion',         label: 'Resolución',           icon: '⚖️' },
   { value: 'circular',           label: 'Circular',             icon: '📢' },
@@ -29,23 +31,25 @@ export const ESTADOS_DOCUMENTO: { value: EstadoDocumento | ''; label: string }[]
 export const CATEGORIAS_LEGALES: { value: CategoriaLegal | ''; label: string }[] = [
   { value: '',                      label: 'Todas las categorías'    },
   { value: 'ley_675_2001',          label: 'Ley 675 de 2001'         },
-  { value: 'reglamento_interno',    label: 'Reglamento interno'      },
-  { value: 'decision_asamblea',     label: 'Decisión de asamblea'    },
   { value: 'decreto_reglamentario', label: 'Decreto reglamentario'   },
   { value: 'codigo_civil',          label: 'Código Civil'            },
   { value: 'nsr_10',                label: 'NSR-10'                  },
   { value: 'norma_tecnica',         label: 'Norma técnica'           },
+  { value: 'reglamento_interno',    label: 'Reglamento interno'      },
+  { value: 'decision_asamblea',     label: 'Decisión de asamblea'    },
   { value: 'otra',                  label: 'Otra'                    },
 ]
 
 export const ALCANCES_DOCUMENTO: { value: AlcanceDocumento | ''; label: string }[] = [
-  { value: '',                       label: 'Todos los alcances'       },
-  { value: 'todos_propietarios',     label: 'Todos los propietarios'   },
-  { value: 'consejo_administracion', label: 'Consejo de administración'},
-  { value: 'administracion',         label: 'Administración'           },
-  { value: 'comite_convivencia',     label: 'Comité de convivencia'    },
-  { value: 'interno',                label: 'Uso interno'              },
+  { value: '',                       label: 'Todos los alcances'        },
+  { value: 'todos_propietarios',     label: 'Todos los propietarios'    },
+  { value: 'consejo_administracion', label: 'Consejo de administración' },
+  { value: 'administracion',         label: 'Administración'            },
+  { value: 'comite_convivencia',     label: 'Comité de convivencia'     },
+  { value: 'interno',                label: 'Uso interno'               },
 ]
+
+// ─── Helpers de estilo ────────────────────────────────────────────────────────
 
 export function estadoBadgeClass(estado: EstadoDocumento): string {
   const map: Record<EstadoDocumento, string> = {
@@ -69,6 +73,19 @@ export function estadoDotClass(estado: EstadoDocumento): string {
   return map[estado] ?? 'bg-gray-400'
 }
 
+export function estadoStripClass(estado: EstadoDocumento): string {
+  const map: Record<EstadoDocumento, string> = {
+    vigente:     'bg-green-500',
+    en_revision: 'bg-yellow-400',
+    borrador:    'bg-blue-400',
+    derogado:    'bg-red-400',
+    archivado:   'bg-gray-300',
+  }
+  return map[estado] ?? 'bg-gray-200'
+}
+
+// ─── Helpers de label ─────────────────────────────────────────────────────────
+
 export function tipoLabel(tipo: TipoDocumento): string {
   return TIPOS_DOCUMENTO.find((t) => t.value === tipo)?.label ?? tipo
 }
@@ -77,7 +94,12 @@ export function tipoIcon(tipo: TipoDocumento): string {
   return TIPOS_DOCUMENTO.find((t) => t.value === tipo)?.icon ?? '📄'
 }
 
-export function categoriaLabel(cat: CategoriaLegal): string {
+export function estadoLabel(estado: EstadoDocumento): string {
+  return ESTADOS_DOCUMENTO.find((e) => e.value === estado)?.label ?? estado
+}
+
+export function categoriaLabel(cat?: CategoriaLegal | null): string {
+  if (!cat) return '-'
   return CATEGORIAS_LEGALES.find((c) => c.value === cat)?.label ?? cat
 }
 
@@ -85,49 +107,57 @@ export function alcanceLabel(alcance: AlcanceDocumento): string {
   return ALCANCES_DOCUMENTO.find((a) => a.value === alcance)?.label ?? alcance
 }
 
-export function formatDate(dt: string): string {
-  if (!dt) return '-'
+// ─── Helpers de fecha ─────────────────────────────────────────────────────────
+
+export function formatDate(dt?: string | null): string {
+  if (!dt) return '—'
   return new Date(dt).toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })
 }
 
-export function formatDateShort(dt: string): string {
-  if (!dt) return '-'
+export function formatDateShort(dt?: string | null): string {
+  if (!dt) return '—'
   return new Date(dt).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-export function formatDateInput(dt: string): string {
+export function formatDateInput(dt?: string | null): string {
   if (!dt) return ''
   return new Date(dt).toISOString().split('T')[0]
 }
 
 export function formatTamano(bytes?: number | null): string {
   if (!bytes) return ''
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  if (bytes < 1024)           return `${bytes} B`
+  if (bytes < 1024 * 1024)   return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-export function diasParaVencer(fechaHasta: string): number {
+export function diasParaVencer(fechaHasta?: string | null): number | null {
+  if (!fechaHasta) return null
   return Math.ceil((new Date(fechaHasta).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
 }
 
-export function useNormativa() {
-  const store = useNormativaStore()
-  return {
-    store, TIPOS_DOCUMENTO, ESTADOS_DOCUMENTO, CATEGORIAS_LEGALES, ALCANCES_DOCUMENTO,
-    estadoBadgeClass, estadoDotClass, tipoLabel, tipoIcon, categoriaLabel, alcanceLabel,
-    formatDate, formatDateShort, formatTamano, diasParaVencer,
-  }
-}
+// ─── Composable de formulario ─────────────────────────────────────────────────
 
-export function useNormativaForm(modo: 'crear' | 'editar' = 'crear') {
+export function useNormativaForm() {
   const store = useNormativaStore()
 
   const form = ref<NormativaCreatePayload>({
-    conjuntoId: '', titulo: '', tipo: 'reglamento_ph', categoria_legal: 'reglamento_interno',
-    estado: 'borrador', alcance: 'todos_propietarios', numero_documento: '', version: '1.0',
-    descripcion: '', contenido: '', fecha_emision: '', fecha_vigencia_desde: '',
-    fecha_vigencia_hasta: '', aprobado_por: '', tags: [],
+    conjuntoId:           '',
+    titulo:               '',
+    tipo:                 'reglamento_ph',
+    categoria_legal:      'reglamento_interno',
+    estado:               'borrador',
+    alcance:              'todos_propietarios',
+    numero_documento:     '',
+    version:              '1.0',
+    descripcion:          '',
+    contenido:            '',
+    archivo_url:          '',
+    fecha_emision:        '',
+    fecha_vigencia_desde: '',
+    fecha_vigencia_hasta: '',
+    aprobado_por:         '',
+    tags:                 [],
   })
 
   const errors   = ref<Record<string, string>>({})
@@ -137,20 +167,17 @@ export function useNormativaForm(modo: 'crear' | 'editar' = 'crear') {
     errors.value = {}
     if (!form.value.conjuntoId)
       errors.value.conjuntoId = 'El conjunto es obligatorio'
-    if (!form.value.titulo.trim() || form.value.titulo.length < 5)
+    if (!form.value.titulo?.trim() || form.value.titulo.length < 5)
       errors.value.titulo = 'El título debe tener al menos 5 caracteres'
     if (!form.value.tipo)
       errors.value.tipo = 'El tipo es obligatorio'
-    if (!form.value.categoria_legal)
-      errors.value.categoria = 'La categoría legal es obligatoria'
-    if (!form.value.fecha_emision)
-      errors.value.fecha_emision = 'La fecha de emisión es obligatoria'
     if (
       form.value.fecha_vigencia_hasta &&
       form.value.fecha_vigencia_desde &&
       form.value.fecha_vigencia_hasta < form.value.fecha_vigencia_desde
-    )
+    ) {
       errors.value.fecha_vigencia_hasta = 'La fecha fin no puede ser anterior a la de inicio'
+    }
     return Object.keys(errors.value).length === 0
   }
 
@@ -164,84 +191,74 @@ export function useNormativaForm(modo: 'crear' | 'editar' = 'crear') {
     form.value.tags = (form.value.tags ?? []).filter((t) => t !== tag)
   }
 
+  function loadFromNormativa(n: any) {
+    form.value = {
+      conjuntoId:           n.conjunto_id              ?? '',
+      titulo:               n.titulo                   ?? '',
+      tipo:                 n.tipo                     ?? 'reglamento_ph',
+      categoria_legal:      n.categoria_legal          ?? 'reglamento_interno',
+      estado:               n.estado                   ?? 'borrador',
+      alcance:              n.alcance                  ?? 'todos_propietarios',
+      numero_documento:     n.numero_documento         ?? '',
+      version:              n.version                  ?? '1.0',
+      descripcion:          n.descripcion              ?? '',
+      contenido:            n.contenido                ?? '',
+      archivo_url:          n.archivo_url              ?? '',
+      fecha_emision:        formatDateInput(n.fecha_emision),
+      fecha_vigencia_desde: formatDateInput(n.fecha_vigencia_desde),
+      fecha_vigencia_hasta: formatDateInput(n.fecha_vigencia_hasta),
+      aprobado_por:         n.aprobado_por             ?? '',
+      tags:                 n.tags                     ?? [],
+    }
+  }
+
+  function buildPayload() {
+    const p: NormativaCreatePayload = {
+      conjuntoId: form.value.conjuntoId,
+      titulo:     form.value.titulo,
+      tipo:       form.value.tipo,
+    }
+    if (form.value.categoria_legal)      p.categoria_legal      = form.value.categoria_legal
+    if (form.value.estado)               p.estado               = form.value.estado
+    if (form.value.alcance)              p.alcance              = form.value.alcance
+    if (form.value.numero_documento)     p.numero_documento     = form.value.numero_documento
+    if (form.value.version)              p.version              = form.value.version
+    if (form.value.descripcion)          p.descripcion          = form.value.descripcion
+    if (form.value.contenido)            p.contenido            = form.value.contenido
+    if (form.value.archivo_url)          p.archivo_url          = form.value.archivo_url
+    if (form.value.fecha_emision)        p.fecha_emision        = form.value.fecha_emision
+    if (form.value.fecha_vigencia_desde) p.fecha_vigencia_desde = form.value.fecha_vigencia_desde
+    if (form.value.fecha_vigencia_hasta) p.fecha_vigencia_hasta = form.value.fecha_vigencia_hasta
+    if (form.value.aprobado_por)         p.aprobado_por         = form.value.aprobado_por
+    if (form.value.tags?.length)         p.tags                 = form.value.tags
+    return p
+  }
+
   async function submit(): Promise<{ id: string } | null> {
     if (!validate()) return null
-    try {
-      // FIX: fechas opcionales usan '' como fallback en lugar de undefined
-      const payload: NormativaCreatePayload = {
-        ...form.value,
-        fecha_emision: form.value.fecha_emision
-          ? new Date(form.value.fecha_emision).toISOString()
-          : '',
-        fecha_vigencia_desde: form.value.fecha_vigencia_desde
-          ? new Date(form.value.fecha_vigencia_desde).toISOString()
-          : '',
-        fecha_vigencia_hasta: form.value.fecha_vigencia_hasta
-          ? new Date(form.value.fecha_vigencia_hasta).toISOString()
-          : '',
-      }
-      if (modo === 'crear') return await store.create(payload)
-      return null
-    } catch { return null }
+    try { return await store.create(buildPayload()) }
+    catch { return null }
   }
 
   async function submitUpdate(id: string): Promise<boolean> {
     if (!validate()) return false
     try {
-      await store.update(id, {
-        titulo:           form.value.titulo,
-        tipo:             form.value.tipo,
-        categoria_legal:  form.value.categoria_legal,
-        estado:           form.value.estado,
-        alcance:          form.value.alcance,
-        numero_documento: form.value.numero_documento,
-        version:          form.value.version,
-        descripcion:      form.value.descripcion,
-        contenido:        form.value.contenido,
-        fecha_emision: form.value.fecha_emision
-          ? new Date(form.value.fecha_emision).toISOString()
-          : undefined,
-        fecha_vigencia_desde: form.value.fecha_vigencia_desde
-          ? new Date(form.value.fecha_vigencia_desde).toISOString()
-          : undefined,
-        fecha_vigencia_hasta: form.value.fecha_vigencia_hasta
-          ? new Date(form.value.fecha_vigencia_hasta).toISOString()
-          : undefined,
-        aprobado_por: form.value.aprobado_por,
-        tags:         form.value.tags,
-      })
+      const { conjuntoId, ...rest } = buildPayload()
+      await store.update(id, rest)
       return true
     } catch { return false }
   }
 
-  function loadFromNormativa(n: any) {
-    form.value = {
-      conjuntoId:      n.conjunto_id       ?? '',
-      titulo:          n.titulo            ?? '',
-      tipo:            n.tipo              ?? 'reglamento_ph',
-      categoria_legal: n.categoria_legal   ?? 'reglamento_interno',
-      estado:          n.estado            ?? 'borrador',
-      alcance:         n.alcance           ?? 'todos_propietarios',
-      numero_documento: n.numero_documento ?? '',
-      version:         n.version           ?? '1.0',
-      descripcion:     n.descripcion       ?? '',
-      contenido:       n.contenido         ?? '',
-      fecha_emision:        formatDateInput(n.fecha_emision),
-      fecha_vigencia_desde: n.fecha_vigencia_desde ? formatDateInput(n.fecha_vigencia_desde) : '',
-      fecha_vigencia_hasta: n.fecha_vigencia_hasta ? formatDateInput(n.fecha_vigencia_hasta) : '',
-      aprobado_por: n.aprobado_por ?? '',
-      tags:         n.tags         ?? [],
-    }
-  }
-
   function reset() {
     form.value = {
-      conjuntoId: '', titulo: '', tipo: 'reglamento_ph', categoria_legal: 'reglamento_interno',
-      estado: 'borrador', alcance: 'todos_propietarios', numero_documento: '', version: '1.0',
-      descripcion: '', contenido: '', fecha_emision: '', fecha_vigencia_desde: '',
-      fecha_vigencia_hasta: '', aprobado_por: '', tags: [],
+      conjuntoId: '', titulo: '', tipo: 'reglamento_ph',
+      categoria_legal: 'reglamento_interno', estado: 'borrador',
+      alcance: 'todos_propietarios', numero_documento: '', version: '1.0',
+      descripcion: '', contenido: '', archivo_url: '',
+      fecha_emision: '', fecha_vigencia_desde: '', fecha_vigencia_hasta: '',
+      aprobado_por: '', tags: [],
     }
-    errors.value = {}
+    errors.value   = {}
     tagInput.value = ''
     store.clearError()
   }
@@ -250,6 +267,6 @@ export function useNormativaForm(modo: 'crear' | 'editar' = 'crear') {
     form, errors, tagInput,
     saving:      computed(() => store.saving),
     serverError: computed(() => store.error),
-    submit, submitUpdate, loadFromNormativa, reset, validate, addTag, removeTag,
+    validate, addTag, removeTag, loadFromNormativa, buildPayload, submit, submitUpdate, reset,
   }
 }

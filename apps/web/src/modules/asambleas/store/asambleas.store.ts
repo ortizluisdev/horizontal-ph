@@ -7,6 +7,12 @@ import type {
   AsambleaUpdatePayload,
   AsambleaFilters,
   PaginatedAsambleas,
+  AsambleaVotacion,
+  VotacionCreatePayload,
+  VotacionUpdatePayload,
+  AsambleaAcuerdo,
+  AcuerdoCreatePayload,
+  AcuerdoUpdatePayload,
 } from '../types/asambleas.types'
 
 export const useAsambleasStore = defineStore('asambleas', () => {
@@ -21,9 +27,13 @@ export const useAsambleasStore = defineStore('asambleas', () => {
   const error   = ref<string | null>(null)
   const filters = ref<AsambleaFilters>({ page: 1, limit: 20 })
 
-  const programadas  = computed(() => items.value.filter((a) => a.estado === 'programada').length)
-  const enCurso      = computed(() => items.value.filter((a) => a.estado === 'en_curso').length)
-  const proximas     = computed(() =>
+  const votaciones = ref<AsambleaVotacion[]>([])
+  const acuerdos   = ref<AsambleaAcuerdo[]>([])
+
+  const programadas = computed(() => items.value.filter((a) => a.estado === 'programada').length)
+  const enCurso     = computed(() => items.value.filter((a) => a.estado === 'en_curso').length)
+  const realizadas  = computed(() => items.value.filter((a) => a.estado === 'realizada').length)
+  const proximas    = computed(() =>
     [...items.value]
       .filter((a) => a.estado === 'programada' && new Date(a.fecha_programada) > new Date())
       .sort((a, b) => new Date(a.fecha_programada).getTime() - new Date(b.fecha_programada).getTime())
@@ -34,7 +44,7 @@ export const useAsambleasStore = defineStore('asambleas', () => {
     loading.value = true
     error.value   = null
     try {
-      filters.value = { ...filters.value, ...f, page: f.page ?? 1 }
+      filters.value       = { ...filters.value, ...f, page: f.page ?? 1 }
       const res: PaginatedAsambleas = await asambleasApi.list(filters.value)
       items.value = res.data
       total.value = res.total
@@ -94,6 +104,22 @@ export const useAsambleasStore = defineStore('asambleas', () => {
     }
   }
 
+  async function deactivate(id: string) {
+    saving.value = true
+    error.value  = null
+    try {
+      await asambleasApi.deactivate(id)
+      items.value = items.value.filter((a) => a.id !== id)
+      total.value = Math.max(0, total.value - 1)
+      if (current.value?.id === id) current.value = null
+    } catch (e: any) {
+      error.value = e?.response?.data?.message ?? 'Error al desactivar asamblea'
+      throw e
+    } finally {
+      saving.value = false
+    }
+  }
+
   async function remove(id: string) {
     saving.value = true
     error.value  = null
@@ -109,15 +135,74 @@ export const useAsambleasStore = defineStore('asambleas', () => {
     }
   }
 
+  // ── Votaciones ────────────────────────────────────────────────────────────
+
+  async function fetchVotaciones(asambleaId: string) {
+    try {
+      votaciones.value = await asambleasApi.listVotaciones(asambleaId)
+    } catch {
+      votaciones.value = []
+    }
+  }
+
+  async function addVotacion(asambleaId: string, payload: VotacionCreatePayload): Promise<AsambleaVotacion> {
+    const v = await asambleasApi.createVotacion(asambleaId, payload)
+    votaciones.value.push(v)
+    return v
+  }
+
+  async function updateVotacion(asambleaId: string, votacionId: string, payload: VotacionUpdatePayload): Promise<AsambleaVotacion> {
+    const v = await asambleasApi.updateVotacion(asambleaId, votacionId, payload)
+    const idx = votaciones.value.findIndex((x) => x.id === votacionId)
+    if (idx !== -1) votaciones.value[idx] = v
+    return v
+  }
+
+  async function removeVotacion(asambleaId: string, votacionId: string) {
+    await asambleasApi.deleteVotacion(asambleaId, votacionId)
+    votaciones.value = votaciones.value.filter((v) => v.id !== votacionId)
+  }
+
+  // ── Acuerdos ──────────────────────────────────────────────────────────────
+
+  async function fetchAcuerdos(asambleaId: string) {
+    try {
+      acuerdos.value = await asambleasApi.listAcuerdos(asambleaId)
+    } catch {
+      acuerdos.value = []
+    }
+  }
+
+  async function addAcuerdo(asambleaId: string, payload: AcuerdoCreatePayload): Promise<AsambleaAcuerdo> {
+    const a = await asambleasApi.createAcuerdo(asambleaId, payload)
+    acuerdos.value.push(a)
+    return a
+  }
+
+  async function updateAcuerdo(asambleaId: string, acuerdoId: string, payload: AcuerdoUpdatePayload): Promise<AsambleaAcuerdo> {
+    const a = await asambleasApi.updateAcuerdo(asambleaId, acuerdoId, payload)
+    const idx = acuerdos.value.findIndex((x) => x.id === acuerdoId)
+    if (idx !== -1) acuerdos.value[idx] = a
+    return a
+  }
+
+  async function removeAcuerdo(asambleaId: string, acuerdoId: string) {
+    await asambleasApi.deleteAcuerdo(asambleaId, acuerdoId)
+    acuerdos.value = acuerdos.value.filter((a) => a.id !== acuerdoId)
+  }
+
   function changePage(p: number) { fetchList({ ...filters.value, page: p }) }
   function applyFilters(f: AsambleaFilters) { fetchList({ ...f, page: 1 }) }
   function clearError() { error.value = null }
-  function clearCurrent() { current.value = null }
+  function clearCurrent() { current.value = null; votaciones.value = []; acuerdos.value = [] }
 
   return {
     items, current, total, page, pages, limit, loading, saving, error, filters,
-    programadas, enCurso, proximas,
-    fetchList, fetchOne, create, update, remove,
+    votaciones, acuerdos,
+    programadas, enCurso, realizadas, proximas,
+    fetchList, fetchOne, create, update, deactivate, remove,
+    fetchVotaciones, addVotacion, updateVotacion, removeVotacion,
+    fetchAcuerdos, addAcuerdo, updateAcuerdo, removeAcuerdo,
     changePage, applyFilters, clearError, clearCurrent,
   }
 })

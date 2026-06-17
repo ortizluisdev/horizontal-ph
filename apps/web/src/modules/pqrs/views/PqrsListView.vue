@@ -63,8 +63,8 @@
       :current-page="store.page"
       :pages="store.pages"
       @select="goToDetail"
-      @tomar="handleTomar"
-      @resolver="handleResolver"
+      @tomar="openTomarModal"
+      @resolver="openResolverModal"
       @page-change="store.changePage"
     />
 
@@ -95,6 +95,7 @@
       </div>
     </div>
 
+    <!-- Modal nueva PQRS -->
     <Teleport to="body">
       <div
         v-if="showForm"
@@ -103,6 +104,84 @@
       >
         <div class="w-full max-w-xl max-h-[90vh] overflow-y-auto">
           <PqrsForm :show-close="true" @close="showForm = false" @saved="onSaved" />
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Modal acción rápida (Tomar / Resolver) -->
+    <Teleport to="body">
+      <div
+        v-if="actionModal"
+        class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-4"
+        @click.self="closeActionModal"
+      >
+        <div class="w-full max-w-md bg-white rounded-xl shadow-xl overflow-hidden">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <h3 class="text-sm font-semibold text-gray-900">
+              {{ actionModal.type === 'tomar' ? 'Tomar caso' : 'Marcar como resuelta' }}
+            </h3>
+            <button class="text-gray-400 hover:text-gray-600" @click="closeActionModal">
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="p-5 space-y-4">
+            <p class="text-xs text-gray-500 font-mono truncate">
+              {{ actionModal.item.numero_radicado }} · {{ actionModal.item.asunto }}
+            </p>
+
+            <div v-if="actionModal.type === 'tomar'">
+              <label class="block text-xs font-medium text-gray-600 mb-1">Nombre del responsable *</label>
+              <input
+                v-model="actionInput"
+                type="text"
+                placeholder="Ej: Juan Pérez"
+                class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
+                autofocus
+                @keyup.enter="confirmAction"
+              />
+            </div>
+
+            <div v-else>
+              <label class="block text-xs font-medium text-gray-600 mb-1">Respuesta al residente *</label>
+              <textarea
+                v-model="actionInput"
+                rows="4"
+                placeholder="Describe la solución o respuesta dada..."
+                class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 resize-none"
+                autofocus
+              />
+            </div>
+
+            <p v-if="actionError" class="text-xs text-red-600">{{ actionError }}</p>
+
+            <div class="flex gap-3">
+              <button
+                type="button"
+                class="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                @click="closeActionModal"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                :disabled="actionProcessing || !actionInput.trim()"
+                :class="[
+                  'flex-1 flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed',
+                  actionModal.type === 'tomar' ? 'bg-yellow-500 hover:bg-yellow-400' : 'bg-green-600 hover:bg-green-500',
+                ]"
+                @click="confirmAction"
+              >
+                <svg v-if="actionProcessing" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                {{ actionModal.type === 'tomar' ? 'Asignar responsable' : 'Marcar como resuelta' }}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </Teleport>
@@ -127,18 +206,57 @@ const { tomarCaso, resolver } = usePqrsGestion()
 const showForm = ref(false)
 const vista    = ref<'tabla' | 'cards'>('tabla')
 
+interface ActionModal { type: 'tomar' | 'resolver'; item: Pqrs }
+const actionModal      = ref<ActionModal | null>(null)
+const actionInput      = ref('')
+const actionError      = ref('')
+const actionProcessing = ref(false)
+
 onMounted(() => store.fetchList())
 
-function goToDetail(item: Pqrs) { router.push(`/pqrs/${item.id}`) }
-
-async function handleTomar(item: Pqrs) {
-  const nombre = prompt('¿Nombre del responsable asignado?')
-  if (nombre?.trim()) await tomarCaso(item.id, nombre.trim())
+function goToDetail(item: Pqrs) {
+  router.push(`/pqrs/${item.id}`)
 }
 
-async function handleResolver(item: Pqrs) {
-  const respuesta = prompt('Ingresa la respuesta / solución dada:')
-  if (respuesta?.trim()) await resolver(item.id, respuesta.trim())
+function openTomarModal(item: Pqrs) {
+  actionModal.value = { type: 'tomar', item }
+  actionInput.value = ''
+  actionError.value = ''
+}
+
+function openResolverModal(item: Pqrs) {
+  actionModal.value = { type: 'resolver', item }
+  actionInput.value = ''
+  actionError.value = ''
+}
+
+function closeActionModal() {
+  actionModal.value = null
+  actionInput.value = ''
+  actionError.value = ''
+}
+
+async function confirmAction() {
+  if (!actionModal.value || !actionInput.value.trim()) return
+  actionProcessing.value = true
+  actionError.value      = ''
+  try {
+    const { type, item } = actionModal.value
+    let ok = false
+    if (type === 'tomar') {
+      ok = await tomarCaso(item.id, actionInput.value.trim())
+    } else {
+      ok = await resolver(item.id, actionInput.value.trim())
+    }
+    if (ok) {
+      closeActionModal()
+      await store.fetchList()
+    } else {
+      actionError.value = 'No se pudo completar la acción. Intenta de nuevo.'
+    }
+  } finally {
+    actionProcessing.value = false
+  }
 }
 
 function onSaved() {

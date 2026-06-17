@@ -41,6 +41,10 @@ export const pqrsApi = {
     return http.patch<Pqrs>(`${BASE}/${id}`, payload)
   },
 
+  deactivate(id: string): Promise<void> {
+    return http.patch(`${BASE}/${id}/desactivar`).then(() => undefined)
+  },
+
   remove(id: string): Promise<void> {
     return http.delete(`${BASE}/${id}`).then(() => undefined)
   },

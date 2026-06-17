@@ -75,22 +75,83 @@ export interface ConjuntoInput {
   logo_url?: string | null;
 }
 
+// ─── Asambleas ────────────────────────────────────────────────────────────────
+
+export type TipoAsamblea   = 'ordinaria' | 'extraordinaria' | 'de_propietarios' | 'de_consejo' | 'otra';
+export type EstadoAsamblea = 'programada' | 'en_curso' | 'realizada' | 'cancelada' | 'pospuesta';
+
 export interface Asamblea {
   id: string;
   conjunto_id: string;
   numero_acta: string;
-  tipo: string;
+  tipo: TipoAsamblea;
   asunto: string;
-  fecha_programada?: string;
+  descripcion?: string | null;
+  fecha_programada: string;
+  fecha_realizada?: string | null;
+  lugar?: string | null;
+  presidente_nombre?: string | null;
+  secretario_nombre?: string | null;
+  quorum_requerido?: number | null;
+  asistentes_presente?: number | null;
+  asistentes_ausentes?: number | null;
+  representantes?: number | null;
+  votacion_requerida?: boolean;
+  estado: EstadoAsamblea;
+  documento_acta_url?: string | null;
+  adjunto_url?: string | null;
+  observaciones?: string | null;
+  activo: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by?: string | null;
+  updated_by?: string | null;
 }
 
 export interface AsambleaInput {
   conjuntoId: string;
   numero_acta: string;
-  tipo: string;
+  tipo: TipoAsamblea;
   asunto: string;
+  descripcion?: string;
   fecha_programada: string;
+  lugar?: string;
+  presidente_nombre?: string;
+  secretario_nombre?: string;
+  quorum_requerido?: number;
+  votacion_requerida?: boolean;
+  observaciones?: string;
 }
+
+export interface AsambleaVotacion {
+  id: string;
+  asamblea_id: string;
+  numero_votacion: number;
+  tema: string;
+  descripcion?: string | null;
+  votos_a_favor: number;
+  votos_en_contra: number;
+  abstenciones: number;
+  resultado?: 'aprobado' | 'rechazado' | 'aplazado' | null;
+  observaciones?: string | null;
+  created_at: string;
+}
+
+export interface AsambleaAcuerdo {
+  id: string;
+  asamblea_id: string;
+  numero_acuerdo: number;
+  descripcion: string;
+  responsable_nombre?: string | null;
+  responsable_id?: string | null;
+  fecha_vencimiento?: string | null;
+  estado: 'pendiente' | 'en progreso' | 'cumplido' | 'no cumplido';
+  observaciones?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ─── Cobranza ─────────────────────────────────────────────────────────────────
 
 export interface Cobranza {
   id: string;
@@ -128,6 +189,8 @@ export interface MovimientoInput {
   valor_debit?: number;
   valor_credit?: number;
 }
+
+// ─── PQRS ─────────────────────────────────────────────────────────────────────
 
 export type TipoPqrs      = 'peticion' | 'queja' | 'reclamo' | 'sugerencia';
 export type EstadoPqrs    = 'abierta' | 'en proceso' | 'resuelta' | 'cerrada' | 'archivada';
@@ -187,6 +250,8 @@ export interface PqrsInput {
   fecha_proximo_seguimiento?: string;
 }
 
+// ─── Notificaciones ───────────────────────────────────────────────────────────
+
 export interface Notificacion {
   id: string;
   tipo?: string | null;
@@ -203,19 +268,70 @@ export interface NotificacionInput {
   fecha_programada?: string | null;
 }
 
+// ─── Normativa ────────────────────────────────────────────────────────────────
+
+export type TipoNormativa =
+  | 'reglamento_ph' | 'manual_convivencia' | 'acta_asamblea' | 'resolucion'
+  | 'circular' | 'politica_interna' | 'contrato' | 'ley_decreto' | 'otro';
+
+export type EstadoNormativa = 'borrador' | 'en_revision' | 'vigente' | 'derogado' | 'archivado';
+
+export type AlcanceNormativa =
+  | 'todos_propietarios' | 'consejo_administracion' | 'administracion'
+  | 'comite_convivencia' | 'interno';
+
+export type CategoriaLegalNormativa =
+  | 'ley_675_2001' | 'decreto_reglamentario' | 'codigo_civil' | 'nsr_10'
+  | 'norma_tecnica' | 'reglamento_interno' | 'decision_asamblea' | 'otra';
+
 export interface Normativa {
   id: string;
-  conjunto_id?: string | null;
-  titulo?: string | null;
-  tipo?: string | null;
+  conjunto_id: string;
+  titulo: string;
+  tipo: TipoNormativa;
+  categoria_legal?: CategoriaLegalNormativa | null;
+  estado: EstadoNormativa;
+  alcance: AlcanceNormativa;
+  numero_documento?: string | null;
+  version?: string | null;
+  descripcion?: string | null;
+  contenido?: string | null;
+  archivo_url?: string | null;
+  archivo_nombre?: string | null;
+  archivo_tamano?: number | null;
+  fecha_emision?: string | null;
+  fecha_vigencia_desde?: string | null;
+  fecha_vigencia_hasta?: string | null;
+  asamblea_id?: string | null;
+  aprobado_por?: string | null;
+  tags: string[];
+  activo: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface NormativaInput {
-  conjuntoId?: string | null;
-  titulo?: string | null;
-  tipo?: string | null;
-  descripcion?: string | null;
+  conjuntoId: string;
+  titulo: string;
+  tipo: TipoNormativa;
+  categoria_legal?: CategoriaLegalNormativa;
+  estado?: EstadoNormativa;
+  alcance?: AlcanceNormativa;
+  numero_documento?: string;
+  version?: string;
+  descripcion?: string;
+  contenido?: string;
+  archivo_url?: string;
+  archivo_nombre?: string;
+  archivo_tamano?: number;
+  fecha_emision?: string;
+  fecha_vigencia_desde?: string;
+  fecha_vigencia_hasta?: string;
+  aprobado_por?: string;
+  tags?: string[];
 }
+
+// ─── Unidades ─────────────────────────────────────────────────────────────────
 
 export interface Unidad {
   id: string;

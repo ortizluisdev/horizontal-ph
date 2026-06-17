@@ -7,10 +7,11 @@ import {
   getPqrsSeguimiento,
   createPqrs,
   updatePqrs,
+  deactivatePqrs,
   deletePqrs,
 } from './pqrs.controller.js';
 
-const tags     = ['PQRS'];
+const tags          = ['PQRS'];
 const TIPO_ENUM     = ['peticion', 'queja', 'reclamo', 'sugerencia'];
 const ESTADO_ENUM   = ['abierta', 'en proceso', 'resuelta', 'cerrada', 'archivada'];
 const PRIORIDAD_ENUM = ['baja', 'normal', 'alta', 'urgente'];
@@ -42,6 +43,7 @@ const pqrsShape = {
     respuesta_descripcion:       { type: 'string', nullable: true },
     evidencia_foto_url:          { type: 'string', nullable: true },
     ubicacion_afectada:          { type: 'string', nullable: true },
+    documentos_adjuntos:         { nullable: true },
     requiere_seguimiento:        { type: 'boolean' },
     fecha_proximo_seguimiento:   { type: 'string', format: 'date', nullable: true },
     calificacion_satisfaccion:   { type: 'integer', nullable: true },
@@ -187,9 +189,17 @@ const updateOpts = {
   },
 };
 
+const deactivateOpts = {
+  schema: {
+    tags, summary: 'Desactivar PQRS (soft delete)', security: [{ bearerAuth: [] }],
+    params: idParam,
+    response: { 204: { type: 'null' }, 404: errorShape },
+  },
+};
+
 const deleteOpts = {
   schema: {
-    tags, summary: 'Eliminar PQRS (solo archivadas)', security: [{ bearerAuth: [] }],
+    tags, summary: 'Eliminar PQRS permanentemente (solo archivadas)', security: [{ bearerAuth: [] }],
     params: idParam,
     response: { 204: { type: 'null' }, 400: errorShape, 404: errorShape },
   },
@@ -199,10 +209,11 @@ const authenticated = [authMiddleware];
 const adminOnly     = [authMiddleware, permitRoles('administrador')];
 
 export default async function pqrsRoutes(app: FastifyInstance) {
-  app.get('/pqrs',                 { ...listOpts,           preHandler: authenticated }, listPqrs);
-  app.get('/pqrs/:id',             { ...getByIdOpts,        preHandler: authenticated }, getPqrsById);
-  app.get('/pqrs/:id/seguimiento', { ...getSeguimientoOpts, preHandler: authenticated }, getPqrsSeguimiento);
-  app.post('/pqrs',                { ...createOpts,         preHandler: authenticated }, createPqrs);
-  app.patch('/pqrs/:id',           { ...updateOpts,         preHandler: adminOnly     }, updatePqrs);
-  app.delete('/pqrs/:id',          { ...deleteOpts,         preHandler: adminOnly     }, deletePqrs);
+  app.get('/pqrs',                    { ...listOpts,           preHandler: authenticated }, listPqrs);
+  app.get('/pqrs/:id',                { ...getByIdOpts,        preHandler: authenticated }, getPqrsById);
+  app.get('/pqrs/:id/seguimiento',    { ...getSeguimientoOpts, preHandler: authenticated }, getPqrsSeguimiento);
+  app.post('/pqrs',                   { ...createOpts,         preHandler: authenticated }, createPqrs);
+  app.patch('/pqrs/:id',              { ...updateOpts,         preHandler: adminOnly     }, updatePqrs);
+  app.patch('/pqrs/:id/desactivar',   { ...deactivateOpts,     preHandler: adminOnly     }, deactivatePqrs);
+  app.delete('/pqrs/:id',             { ...deleteOpts,         preHandler: adminOnly     }, deletePqrs);
 }

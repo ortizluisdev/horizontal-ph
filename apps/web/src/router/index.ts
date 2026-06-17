@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { authGuard } from './guards'
+import asambleasRoutes from '@/modules/asambleas/routes'
+import pqrsRoutes from '@/modules/pqrs/routes'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -30,8 +32,8 @@ const router = createRouter({
 
         // Resto de módulos
         { path: 'cobranza', component: () => import('@/modules/cobranza/views/FacturasView.vue') },
-        { path: 'pqrs', component: () => import('@/modules/pqrs/views/PqrsListView.vue') },
-        { path: 'asambleas', component: () => import('@/modules/asambleas/views/AsambleasListView.vue') },
+        ...pqrsRoutes,
+        ...asambleasRoutes,
         { path: 'contabilidad', component: () => import('@/modules/contabilidad/views/LibroMayorView.vue') },
         { path: 'normativa', component: () => import('@/modules/normativa/views/ReglamentosView.vue') },
         { path: 'notificaciones', component: () => import('@/modules/notificaciones/views/NotificacionesView.vue') },

@@ -27,16 +27,21 @@ export class NormativaService {
     if (!existing) {
       throw Object.assign(new Error("Normativa no encontrada"), { statusCode: 404 });
     }
-
-    // Una normativa derogada o archivada no se puede editar
-    if (["derogada", "archivada"].includes((existing as any).estado)) {
+    if (existing.estado === "derogado" || existing.estado === "archivado") {
       throw Object.assign(
         new Error("No se puede modificar una normativa derogada o archivada"),
         { statusCode: 400 }
       );
     }
-
     return (await repo.update(id, data, tenantId)) as Normativa;
+  }
+
+  async deactivate(id: string, tenantId: string): Promise<void> {
+    const existing = await repo.findById(id, tenantId);
+    if (!existing) {
+      throw Object.assign(new Error("Normativa no encontrada"), { statusCode: 404 });
+    }
+    await repo.deactivate(id);
   }
 
   async remove(id: string, tenantId: string): Promise<void> {
@@ -44,16 +49,12 @@ export class NormativaService {
     if (!existing) {
       throw Object.assign(new Error("Normativa no encontrada"), { statusCode: 404 });
     }
-
-    // Solo se pueden eliminar borradores o archivadas
-    const estado = (existing as any).estado as string;
-    if (!["borrador", "archivada"].includes(estado)) {
+    if (!["borrador", "archivado"].includes(existing.estado)) {
       throw Object.assign(
-        new Error("Solo se pueden eliminar normativas en estado borrador o archivada"),
+        new Error("Solo se pueden eliminar normativas en estado borrador o archivado"),
         { statusCode: 400 }
       );
     }
-
-    await repo.remove(id);
+    await repo.hardDelete(id);
   }
 }

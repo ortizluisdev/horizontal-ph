@@ -9,11 +9,60 @@
       </button>
     </div>
 
-    <form @submit.prevent="handleSubmit" novalidate class="p-5 space-y-4">
-      <!-- conjuntoId / unidadId ocultos con error visible si faltan -->
-      <div v-if="errors.conjuntoId || errors.unidadId" class="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
-        {{ errors.conjuntoId || errors.unidadId }}
+    <div v-if="loadingOptions" class="flex items-center justify-center py-12">
+      <svg class="animate-spin h-6 w-6 text-indigo-500" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+      </svg>
+    </div>
+
+    <form v-else @submit.prevent="handleSubmit" novalidate class="p-5 space-y-4">
+
+      <!-- Unidad del residente (solo lectura) -->
+      <div v-if="!isAdmin && unidadLabel" class="rounded-lg bg-indigo-50 border border-indigo-100 px-4 py-3">
+        <p class="text-xs font-medium text-indigo-600 mb-0.5">Tu unidad</p>
+        <p class="text-sm font-semibold text-indigo-900">{{ unidadLabel }}</p>
       </div>
+
+      <!-- Error de unidad no identificada (residente sin unidad_id) -->
+      <div
+        v-if="!isAdmin && !unidadLabel && !loadingOptions"
+        class="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800"
+      >
+        No se encontró una unidad asociada a tu cuenta. Contacta al administrador.
+      </div>
+
+      <!-- Selectores conjunto / unidad para administrador -->
+      <template v-if="isAdmin">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Conjunto *</label>
+            <select
+              v-model="form.conjuntoId"
+              :class="field(errors.conjuntoId)"
+              @change="onConjuntoChange"
+            >
+              <option value="">Seleccionar conjunto...</option>
+              <option v-for="c in conjuntosOptions" :key="c.id" :value="c.id">{{ c.label }}</option>
+            </select>
+            <p v-if="errors.conjuntoId" class="mt-1 text-xs text-red-600">{{ errors.conjuntoId }}</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Unidad *</label>
+            <select
+              v-model="form.unidadId"
+              :class="field(errors.unidadId)"
+              :disabled="!form.conjuntoId || loadingUnidades"
+            >
+              <option value="">
+                {{ loadingUnidades ? 'Cargando...' : 'Seleccionar unidad...' }}
+              </option>
+              <option v-for="u in unidadesOptions" :key="u.id" :value="u.id">{{ u.label }}</option>
+            </select>
+            <p v-if="errors.unidadId" class="mt-1 text-xs text-red-600">{{ errors.unidadId }}</p>
+          </div>
+        </div>
+      </template>
 
       <!-- Tipo -->
       <div>
@@ -145,7 +194,7 @@
         </button>
         <button
           type="submit"
-          :disabled="saving"
+          :disabled="saving || (!isAdmin && !form.conjuntoId)"
           class="flex-1 flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
         >
           <svg v-if="saving" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -160,8 +209,11 @@
 </template>
 
 <script setup lang="ts">
-import { TIPOS_PQRS, CATEGORIAS_PQRS, PRIORIDADES_PQRS } from '../composables/usePqrs'
-import { usePqrsForm } from '../composables/usePqrs'
+import { ref, computed, onMounted } from 'vue'
+import { useAuthStore } from '@/modules/auth/store/auth.store'
+import { conjuntosApi } from '@/modules/conjuntos/api/conjuntos.api'
+import { unidadesApi } from '@/modules/unidades/api/unidades.api'
+import { TIPOS_PQRS, CATEGORIAS_PQRS, PRIORIDADES_PQRS, usePqrsForm } from '../composables/usePqrs'
 import type { Pqrs } from '../types/pqrs.types'
 
 const props = defineProps<{
@@ -174,16 +226,75 @@ const emit = defineEmits<{
   (e: 'saved', p: Pqrs): void
 }>()
 
+const auth    = useAuthStore()
+const isAdmin = computed(() => auth.isAdmin)
+
+interface Option { id: string; label: string }
+const conjuntosOptions = ref<Option[]>([])
+const unidadesOptions  = ref<Option[]>([])
+const loadingOptions   = ref(false)
+const loadingUnidades  = ref(false)
+const unidadLabel      = ref('')
+const resolvedConjuntoId = ref(props.conjuntoId ?? '')
+const resolvedUnidadId   = ref(props.unidadId   ?? '')
+
 const { form, errors, saving, serverError, submit, reset } = usePqrsForm(
   props.conjuntoId,
   props.unidadId
 )
+
+onMounted(async () => {
+  if (props.conjuntoId && props.unidadId) return
+
+  loadingOptions.value = true
+  try {
+    if (!isAdmin.value && auth.user?.unidad_id) {
+      const { data: unidad } = await unidadesApi.getById(auth.user.unidad_id)
+      form.value.unidadId      = unidad.id
+      form.value.conjuntoId    = unidad.conjunto_id
+      resolvedUnidadId.value   = unidad.id
+      resolvedConjuntoId.value = unidad.conjunto_id
+      unidadLabel.value        = unidad.nombre || unidad.numero_unidad
+    } else if (isAdmin.value) {
+      const { data: paginated } = await conjuntosApi.list({ limit: 100 } as any)
+      conjuntosOptions.value = (paginated as any).data.map((c: any) => ({
+        id:    c.id,
+        label: c.nombre,
+      }))
+    }
+  } catch {
+    // silently fail — form validation will catch missing IDs
+  } finally {
+    loadingOptions.value = false
+  }
+})
+
+async function onConjuntoChange() {
+  form.value.unidadId   = ''
+  unidadesOptions.value = []
+  if (!form.value.conjuntoId) return
+  loadingUnidades.value = true
+  try {
+    const { data } = await unidadesApi.listByConjunto(form.value.conjuntoId)
+    unidadesOptions.value = (data as any[]).map((u: any) => ({
+      id:    u.id,
+      label: u.nombre || u.numero_unidad,
+    }))
+  } catch {
+    // ignore
+  } finally {
+    loadingUnidades.value = false
+  }
+}
 
 async function handleSubmit() {
   const result = await submit()
   if (result) {
     emit('saved', result)
     reset()
+    // Restaurar IDs resueltos tras el reset del formulario
+    if (resolvedConjuntoId.value) form.value.conjuntoId = resolvedConjuntoId.value
+    if (resolvedUnidadId.value)   form.value.unidadId   = resolvedUnidadId.value
   }
 }
 

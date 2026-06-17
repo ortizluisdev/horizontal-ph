@@ -96,6 +96,19 @@ export async function updatePqrs(req: FastifyRequest, reply: FastifyReply) {
   }
 }
 
+export async function deactivatePqrs(req: FastifyRequest, reply: FastifyReply) {
+  const tenantId = getTenantId(req);
+  if (!tenantId) return reply.code(400).send({ message: 'Tenant no identificado' });
+  const params = pqrsParamsSchema.safeParse(req.params);
+  if (!params.success) return handleZodError(reply, params.error);
+  try {
+    await service.deactivate(params.data.id, tenantId, getUserId(req));
+    return reply.code(204).send();
+  } catch (err) {
+    return handleServiceError(reply, err);
+  }
+}
+
 export async function deletePqrs(req: FastifyRequest, reply: FastifyReply) {
   const tenantId = getTenantId(req);
   if (!tenantId) return reply.code(400).send({ message: 'Tenant no identificado' });

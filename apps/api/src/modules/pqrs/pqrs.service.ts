@@ -37,6 +37,13 @@ export class PqrsService {
       throw Object.assign(new Error('PQRS no encontrada'), { statusCode: 404 });
     }
 
+    if (!existing.activo) {
+      throw Object.assign(
+        new Error('No se puede modificar una PQRS desactivada'),
+        { statusCode: 400 }
+      );
+    }
+
     if (existing.estado === 'archivada') {
       throw Object.assign(
         new Error('No se puede modificar una PQRS archivada'),
@@ -55,6 +62,14 @@ export class PqrsService {
     }
 
     return (await repo.update(id, data, existing, tenantId, userId)) as Pqrs;
+  }
+
+  async deactivate(id: string, tenantId: string, userId?: string): Promise<void> {
+    const existing = await repo.findById(id, tenantId);
+    if (!existing) {
+      throw Object.assign(new Error('PQRS no encontrada'), { statusCode: 404 });
+    }
+    await repo.deactivate(id, userId);
   }
 
   async remove(id: string, tenantId: string): Promise<void> {

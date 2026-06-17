@@ -29,6 +29,7 @@ const SELECT_COLS = `
   p.responsable_asignado_id, p.responsable_asignado_nombre,
   p.respuesta_descripcion,
   p.evidencia_foto_url, p.ubicacion_afectada,
+  p.documentos_adjuntos,
   p.requiere_seguimiento, p.fecha_proximo_seguimiento,
   p.calificacion_satisfaccion, p.comentario_satisfaccion,
   p.observaciones_internas,
@@ -44,19 +45,19 @@ export class PqrsRepository {
     } = query;
     const offset = (page - 1) * limit;
 
-    const conditions: string[] = ['cj.tenant_id = $1'];
+    const conditions: string[] = ['cj.tenant_id = $1', 'p.activo = true'];
     const values: unknown[]    = [tenantId];
     let idx = 2;
 
-    if (conjuntoId)     { conditions.push(`p.conjunto_id = $${idx++}`);          values.push(conjuntoId); }
-    if (unidadId)       { conditions.push(`p.unidad_id = $${idx++}`);            values.push(unidadId); }
-    if (tipo)           { conditions.push(`p.tipo = $${idx++}`);                 values.push(tipo); }
-    if (estado)         { conditions.push(`p.estado = $${idx++}`);               values.push(estado); }
-    if (prioridad)      { conditions.push(`p.prioridad = $${idx++}`);            values.push(prioridad); }
-    if (categoria)      { conditions.push(`p.categoria = $${idx++}`);            values.push(categoria); }
-    if (fechaDesde)     { conditions.push(`p.fecha_radicacion >= $${idx++}`);    values.push(fechaDesde); }
-    if (fechaHasta)     { conditions.push(`p.fecha_radicacion <= $${idx++}`);    values.push(fechaHasta); }
-    if (numeroRadicado) { conditions.push(`p.numero_radicado ILIKE $${idx++}`);  values.push(`%${numeroRadicado}%`); }
+    if (conjuntoId)     { conditions.push(`p.conjunto_id = $${idx++}`);         values.push(conjuntoId); }
+    if (unidadId)       { conditions.push(`p.unidad_id = $${idx++}`);           values.push(unidadId); }
+    if (tipo)           { conditions.push(`p.tipo = $${idx++}`);                values.push(tipo); }
+    if (estado)         { conditions.push(`p.estado = $${idx++}`);              values.push(estado); }
+    if (prioridad)      { conditions.push(`p.prioridad = $${idx++}`);           values.push(prioridad); }
+    if (categoria)      { conditions.push(`p.categoria = $${idx++}`);           values.push(categoria); }
+    if (fechaDesde)     { conditions.push(`p.fecha_radicacion >= $${idx++}`);   values.push(fechaDesde); }
+    if (fechaHasta)     { conditions.push(`p.fecha_radicacion <= $${idx++}`);   values.push(fechaHasta); }
+    if (numeroRadicado) { conditions.push(`p.numero_radicado ILIKE $${idx++}`); values.push(`%${numeroRadicado}%`); }
 
     const where = `WHERE ${conditions.join(' AND ')}`;
 
@@ -142,19 +143,19 @@ export class PqrsRepository {
       [
         data.conjuntoId,
         data.unidadId,
-        data.usuarioId             ?? null,
+        data.usuarioId                 ?? null,
         numero_radicado,
         data.tipo,
         data.asunto,
         data.descripcion,
-        data.categoria             ?? null,
-        data.prioridad             ?? 'normal',
-        data.nombre_solicitante    ?? null,
-        data.email_solicitante     ?? null,
-        data.telefono_solicitante  ?? null,
-        data.ubicacion_afectada    ?? null,
-        data.evidencia_foto_url    ?? null,
-        data.requiere_seguimiento  ?? false,
+        data.categoria                 ?? null,
+        data.prioridad                 ?? 'normal',
+        data.nombre_solicitante        ?? null,
+        data.email_solicitante         ?? null,
+        data.telefono_solicitante      ?? null,
+        data.ubicacion_afectada        ?? null,
+        data.evidencia_foto_url        ?? null,
+        data.requiere_seguimiento      ?? false,
         data.fecha_proximo_seguimiento ?? null,
       ]
     );
@@ -240,6 +241,16 @@ export class PqrsRepository {
     }
 
     return this.findById(id, tenantId);
+  }
+
+  async deactivate(id: string, userId?: string): Promise<boolean> {
+    const res = await pool.query(
+      `UPDATE pqrs
+       SET activo = false, updated_at = now(), updated_by = $2
+       WHERE id = $1`,
+      [id, userId ?? null]
+    );
+    return (res.rowCount ?? 0) > 0;
   }
 
   async remove(id: string): Promise<boolean> {

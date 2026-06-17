@@ -12,46 +12,57 @@ export interface PaginatedNormativas {
   pages: number;
 }
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const SELECT_COLS = `
+  n.id, n.conjunto_id, n.titulo, n.tipo, n.categoria_legal, n.estado, n.alcance,
+  n.numero_documento, n.version, n.descripcion, n.contenido,
+  n.archivo_url, n.archivo_nombre, n.archivo_tamano,
+  n.fecha_emision, n.fecha_vigencia_desde, n.fecha_vigencia_hasta,
+  n.asamblea_id, n.aprobado_por,
+  COALESCE(n.tags, '{}') AS tags,
+  n.activo, n.created_at, n.updated_at
+`;
+
 // ─── Repository ───────────────────────────────────────────────────────────────
 
 export class NormativaRepository {
 
   async list(query: NormativaQuery, tenantId: string): Promise<PaginatedNormativas> {
-    const { page, limit, conjuntoId, tipo, estado, activo } = query;
+    const { page, limit, conjuntoId, tipo, estado, categoria_legal, alcance, search, activo } = query;
     const offset = (page - 1) * limit;
-
     const conditions: string[] = ["cj.tenant_id = $1"];
     const values: unknown[]    = [tenantId];
     let idx = 2;
 
-    if (conjuntoId) {
-      conditions.push(`n.conjunto_id = $${idx++}`);
-      values.push(conjuntoId);
-    }
-    if (tipo) {
-      conditions.push(`n.tipo = $${idx++}`);
-      values.push(tipo);
-    }
-    if (estado) {
-      conditions.push(`n.estado = $${idx++}`);
-      values.push(estado);
-    }
+    if (conjuntoId)      { conditions.push(`n.conjunto_id = $${idx++}`);    values.push(conjuntoId); }
+    if (tipo)            { conditions.push(`n.tipo = $${idx++}`);            values.push(tipo); }
+    if (estado)          { conditions.push(`n.estado = $${idx++}`);          values.push(estado); }
+    if (categoria_legal) { conditions.push(`n.categoria_legal = $${idx++}`); values.push(categoria_legal); }
+    if (alcance)         { conditions.push(`n.alcance = $${idx++}`);         values.push(alcance); }
     if (activo !== undefined) {
       conditions.push(`n.activo = $${idx++}`);
       values.push(activo);
+    }
+    if (search) {
+      conditions.push(
+        `(n.titulo ILIKE $${idx} OR n.descripcion ILIKE $${idx} OR n.numero_documento ILIKE $${idx})`
+      );
+      values.push(`%${search}%`);
+      idx++;
     }
 
     const where = `WHERE ${conditions.join(" AND ")}`;
 
     const [dataRes, countRes] = await Promise.all([
       pool.query<Normativa>(
-        `SELECT n.id, n.conjunto_id, n.titulo, n.tipo, n.descripcion,
-                n.version, n.estado, n.fecha_vigencia, n.documento_url,
-                n.activo, n.created_at, n.updated_at
+        `SELECT ${SELECT_COLS}
          FROM normativa n
          INNER JOIN conjuntos cj ON cj.id = n.conjunto_id
          ${where}
-         ORDER BY n.created_at DESC
+         ORDER BY
+           CASE n.estado WHEN 'vigente' THEN 0 WHEN 'en_revision' THEN 1 WHEN 'borrador' THEN 2 ELSE 3 END,
+           n.created_at DESC
          LIMIT $${idx++} OFFSET $${idx++}`,
         [...values, limit, offset]
       ),
@@ -70,9 +81,7 @@ export class NormativaRepository {
 
   async findById(id: string, tenantId: string): Promise<Normativa | null> {
     const res = await pool.query<Normativa>(
-      `SELECT n.id, n.conjunto_id, n.titulo, n.tipo, n.descripcion,
-              n.contenido, n.version, n.estado, n.fecha_vigencia,
-              n.documento_url, n.activo, n.created_at, n.updated_at
+      `SELECT ${SELECT_COLS}
        FROM normativa n
        INNER JOIN conjuntos cj ON cj.id = n.conjunto_id
        WHERE n.id = $1 AND cj.tenant_id = $2
@@ -83,7 +92,6 @@ export class NormativaRepository {
   }
 
   async create(data: NormativaCreateInput, tenantId: string): Promise<Normativa> {
-    // Validar que el conjunto pertenece al tenant
     const conjunto = await pool.query(
       `SELECT id FROM conjuntos WHERE id = $1 AND tenant_id = $2 LIMIT 1`,
       [data.conjuntoId, tenantId]
@@ -97,21 +105,34 @@ export class NormativaRepository {
 
     const res = await pool.query<{ id: string }>(
       `INSERT INTO normativa
-         (conjunto_id, titulo, tipo, descripcion, contenido, version,
-          estado, fecha_vigencia, documento_url, activo)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+         (conjunto_id, titulo, tipo, categoria_legal, estado, alcance,
+          numero_documento, version, descripcion, contenido,
+          archivo_url, archivo_nombre, archivo_tamano,
+          fecha_emision, fecha_vigencia_desde, fecha_vigencia_hasta,
+          asamblea_id, aprobado_por, tags, activo)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
        RETURNING id`,
       [
         data.conjuntoId,
         data.titulo,
         data.tipo,
-        data.descripcion   ?? null,
-        data.contenido     ?? null,
-        data.version       ?? null,
-        data.estado        ?? "vigente",
-        data.fecha_vigencia ?? null,
-        data.documento_url  ?? null,
-        data.activo         ?? true,
+        data.categoria_legal      ?? null,
+        data.estado               ?? "borrador",
+        data.alcance              ?? "todos_propietarios",
+        data.numero_documento     ?? null,
+        data.version              ?? null,
+        data.descripcion          ?? null,
+        data.contenido            ?? null,
+        data.archivo_url          ?? null,
+        data.archivo_nombre       ?? null,
+        data.archivo_tamano       ?? null,
+        data.fecha_emision        ?? null,
+        data.fecha_vigencia_desde ?? null,
+        data.fecha_vigencia_hasta ?? null,
+        data.asamblea_id          ?? null,
+        data.aprobado_por         ?? null,
+        data.tags                 ?? [],
+        data.activo               ?? true,
       ]
     );
 
@@ -123,20 +144,35 @@ export class NormativaRepository {
     const values: unknown[] = [];
     let idx = 1;
 
-    const fields: (keyof NormativaUpdateInput)[] = [
-      "titulo", "tipo", "descripcion", "contenido",
-      "version", "estado", "fecha_vigencia", "documento_url", "activo",
+    const fieldMap: Array<[string, keyof NormativaUpdateInput]> = [
+      ["titulo",               "titulo"],
+      ["tipo",                 "tipo"],
+      ["categoria_legal",      "categoria_legal"],
+      ["estado",               "estado"],
+      ["alcance",              "alcance"],
+      ["numero_documento",     "numero_documento"],
+      ["version",              "version"],
+      ["descripcion",          "descripcion"],
+      ["contenido",            "contenido"],
+      ["archivo_url",          "archivo_url"],
+      ["archivo_nombre",       "archivo_nombre"],
+      ["archivo_tamano",       "archivo_tamano"],
+      ["fecha_emision",        "fecha_emision"],
+      ["fecha_vigencia_desde", "fecha_vigencia_desde"],
+      ["fecha_vigencia_hasta", "fecha_vigencia_hasta"],
+      ["aprobado_por",         "aprobado_por"],
+      ["tags",                 "tags"],
+      ["activo",               "activo"],
     ];
 
-    for (const field of fields) {
-      if (data[field] !== undefined) {
-        sets.push(`${field} = $${idx++}`);
-        values.push(data[field]);
+    for (const [col, key] of fieldMap) {
+      if (data[key] !== undefined) {
+        sets.push(`${col} = $${idx++}`);
+        values.push(data[key]);
       }
     }
 
     if (sets.length === 0) return this.findById(id, tenantId);
-
     sets.push("updated_at = now()");
     values.push(id);
 
@@ -148,11 +184,14 @@ export class NormativaRepository {
     return this.findById(id, tenantId);
   }
 
-  async remove(id: string): Promise<boolean> {
-    const res = await pool.query(
-      `DELETE FROM normativa WHERE id = $1`,
+  async deactivate(id: string): Promise<void> {
+    await pool.query(
+      `UPDATE normativa SET activo = false, updated_at = now() WHERE id = $1`,
       [id]
     );
-    return (res.rowCount ?? 0) > 0;
+  }
+
+  async hardDelete(id: string): Promise<void> {
+    await pool.query(`DELETE FROM normativa WHERE id = $1`, [id]);
   }
 }

@@ -40,10 +40,23 @@
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div class="lg:col-span-2 space-y-4">
+
           <!-- Descripción -->
           <div class="rounded-xl border border-gray-200 bg-white p-5">
             <h3 class="text-sm font-semibold text-gray-900 mb-3">Descripción</h3>
             <p class="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{{ pqrs.descripcion }}</p>
+          </div>
+
+          <!-- Respuesta (cuando existe) -->
+          <div
+            v-if="pqrs.respuesta_descripcion"
+            class="rounded-xl border border-green-200 bg-green-50 p-5"
+          >
+            <h3 class="text-sm font-semibold text-green-800 mb-2">Respuesta del administrador</h3>
+            <p class="text-sm text-green-700 leading-relaxed whitespace-pre-line">{{ pqrs.respuesta_descripcion }}</p>
+            <p v-if="pqrs.fecha_respuesta" class="text-xs text-green-500 mt-2">
+              {{ formatDateTime(pqrs.fecha_respuesta) }}
+            </p>
           </div>
 
           <!-- Datos del caso -->
@@ -58,19 +71,63 @@
             </div>
           </div>
 
-          <!-- Acciones admin — detección por role_name en JWT -->
-          <div v-if="isAdmin" class="rounded-xl border border-gray-200 bg-white p-5 space-y-3">
+          <!-- Satisfacción del residente (cuando resuelta/cerrada) -->
+          <div
+            v-if="!isAdmin && ['resuelta', 'cerrada'].includes(pqrs.estado)"
+            class="rounded-xl border border-gray-200 bg-white p-5 space-y-3"
+          >
+            <h3 class="text-sm font-semibold text-gray-900">¿Quedaste satisfecho con la respuesta?</h3>
+            <div v-if="pqrs.calificacion_satisfaccion" class="text-sm text-gray-600">
+              Calificación: <span class="font-semibold">{{ '★'.repeat(pqrs.calificacion_satisfaccion) }}{{ '☆'.repeat(5 - pqrs.calificacion_satisfaccion) }}</span>
+              <span v-if="pqrs.comentario_satisfaccion" class="block text-gray-500 mt-1">{{ pqrs.comentario_satisfaccion }}</span>
+            </div>
+            <template v-else>
+              <div class="flex gap-2">
+                <button
+                  v-for="n in 5"
+                  :key="n"
+                  type="button"
+                  :class="[
+                    'text-2xl transition-transform hover:scale-110',
+                    satisfaccionHover >= n ? 'text-yellow-400' : 'text-gray-300',
+                  ]"
+                  @mouseenter="satisfaccionHover = n"
+                  @mouseleave="satisfaccionHover = 0"
+                  @click="calificacionSeleccionada = n"
+                >★</button>
+              </div>
+              <textarea
+                v-if="calificacionSeleccionada"
+                v-model="comentarioSatisfaccion"
+                rows="2"
+                placeholder="Comentario opcional..."
+                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 resize-none"
+              />
+              <button
+                v-if="calificacionSeleccionada"
+                :disabled="savingRating"
+                class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-60 transition-colors"
+                @click="enviarCalificacion"
+              >
+                {{ savingRating ? 'Enviando...' : 'Enviar calificación' }}
+              </button>
+            </template>
+          </div>
+
+          <!-- Acciones admin -->
+          <div v-if="isAdmin && pqrs.activo" class="rounded-xl border border-gray-200 bg-white p-5 space-y-3">
             <h3 class="text-sm font-semibold text-gray-900">Gestión</h3>
 
+            <!-- Tomar caso -->
             <div v-if="pqrs.estado === 'abierta'" class="flex gap-2">
               <input
                 v-model="responsableNombre"
                 type="text"
-                placeholder="Nombre del responsable"
+                placeholder="Nombre del responsable asignado"
                 class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
               />
               <button
-                :disabled="processing || !responsableNombre"
+                :disabled="processing || !responsableNombre.trim()"
                 class="rounded-lg bg-yellow-500 px-4 py-2 text-sm font-semibold text-white hover:bg-yellow-400 disabled:opacity-60 transition-colors"
                 @click="handleTomar"
               >
@@ -78,15 +135,16 @@
               </button>
             </div>
 
+            <!-- Resolver -->
             <div v-if="pqrs.estado === 'en proceso'" class="space-y-2">
               <textarea
                 v-model="respuestaTexto"
                 rows="3"
-                placeholder="Describe la solución o respuesta dada..."
+                placeholder="Describe la solución o respuesta dada al residente..."
                 class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 resize-none"
               />
               <button
-                :disabled="processing || !respuestaTexto"
+                :disabled="processing || !respuestaTexto.trim()"
                 class="w-full rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-60 transition-colors"
                 @click="handleResolver"
               >
@@ -94,6 +152,7 @@
               </button>
             </div>
 
+            <!-- Cerrar / Archivar -->
             <div class="flex gap-2">
               <button
                 v-if="pqrs.estado === 'resuelta'"
@@ -101,7 +160,7 @@
                 class="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60 transition-colors"
                 @click="handleCerrar"
               >
-                Cerrar
+                Cerrar PQRS
               </button>
               <button
                 v-if="pqrs.estado === 'cerrada'"
@@ -113,20 +172,44 @@
               </button>
             </div>
 
+            <!-- Desactivar -->
+            <div v-if="!['archivada'].includes(pqrs.estado)" class="pt-2 border-t border-gray-100">
+              <button
+                :disabled="processing"
+                class="text-xs text-red-500 hover:text-red-700 transition-colors disabled:opacity-60"
+                @click="handleDesactivar"
+              >
+                Desactivar PQRS
+              </button>
+            </div>
+
             <p v-if="gestionError" class="text-xs text-red-600">{{ gestionError }}</p>
           </div>
+
         </div>
 
         <div class="space-y-4">
+          <!-- Solicitante -->
           <div v-if="pqrs.nombre_solicitante" class="rounded-xl border border-gray-200 bg-white p-4 space-y-2">
             <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Solicitante</h3>
             <p class="text-sm font-medium text-gray-900">{{ pqrs.nombre_solicitante }}</p>
             <p v-if="pqrs.email_solicitante" class="text-xs text-gray-500">{{ pqrs.email_solicitante }}</p>
+            <p v-if="pqrs.telefono_solicitante" class="text-xs text-gray-500">{{ pqrs.telefono_solicitante }}</p>
           </div>
 
+          <!-- Responsable -->
           <div v-if="pqrs.responsable_asignado_nombre" class="rounded-xl border border-indigo-100 bg-indigo-50 p-4">
-            <h3 class="text-xs font-semibold text-indigo-600 uppercase tracking-wide mb-1">Responsable</h3>
+            <h3 class="text-xs font-semibold text-indigo-600 uppercase tracking-wide mb-1">Responsable asignado</h3>
             <p class="text-sm font-medium text-indigo-900">{{ pqrs.responsable_asignado_nombre }}</p>
+          </div>
+
+          <!-- Notas internas (solo admin) -->
+          <div
+            v-if="isAdmin && pqrs.observaciones_internas"
+            class="rounded-xl border border-amber-200 bg-amber-50 p-4"
+          >
+            <h3 class="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1">Notas internas</h3>
+            <p class="text-sm text-amber-800">{{ pqrs.observaciones_internas }}</p>
           </div>
 
           <PqrsTimeline :items="store.seguimiento" />
@@ -139,31 +222,28 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '@/modules/auth/store/auth.store'
 import { usePqrsStore } from '../store/pqrs.store'
 import { usePqrsGestion, tipoIcon, prioridadBadgeClass, formatDateTime } from '../composables/usePqrs'
+import { pqrsApi } from '../api/pqrs.api'
 import PqrsStatusBadge from '../components/PqrsStatusBadge.vue'
 import PqrsTimeline from '../components/PqrsTimeline.vue'
 
 const route  = useRoute()
 const router = useRouter()
 const store  = usePqrsStore()
+const auth   = useAuthStore()
 const { processing, error: gestionError, tomarCaso, resolver, cerrar, archivar } = usePqrsGestion()
 
-const pqrs              = computed(() => store.current)
-const responsableNombre = ref('')
-const respuestaTexto    = ref('')
+const pqrs    = computed(() => store.current)
+const isAdmin = computed(() => auth.isAdmin)
 
-// Detecta rol administrador desde el JWT almacenado en localStorage
-const isAdmin = computed(() => {
-  try {
-    const token = localStorage.getItem('token') ?? localStorage.getItem('access_token') ?? ''
-    if (!token) return false
-    const payload = JSON.parse(atob(token.split('.')[1]))
-    return payload?.role_name === 'administrador' || payload?.role === 'administrador'
-  } catch {
-    return false
-  }
-})
+const responsableNombre      = ref('')
+const respuestaTexto         = ref('')
+const satisfaccionHover      = ref(0)
+const calificacionSeleccionada = ref(0)
+const comentarioSatisfaccion = ref('')
+const savingRating           = ref(false)
 
 onMounted(() => store.fetchOne(route.params.id as string))
 onUnmounted(() => store.clearCurrent())
@@ -183,16 +263,59 @@ const detalleRows = computed(() => {
   ]
 })
 
+async function refreshDetalle() {
+  await store.fetchOne(route.params.id as string)
+}
+
 async function handleTomar() {
-  const ok = await tomarCaso(pqrs.value!.id, responsableNombre.value)
-  if (ok) responsableNombre.value = ''
+  const ok = await tomarCaso(pqrs.value!.id, responsableNombre.value.trim())
+  if (ok) {
+    responsableNombre.value = ''
+    await refreshDetalle()
+  }
 }
 
 async function handleResolver() {
-  const ok = await resolver(pqrs.value!.id, respuestaTexto.value)
-  if (ok) respuestaTexto.value = ''
+  const ok = await resolver(pqrs.value!.id, respuestaTexto.value.trim())
+  if (ok) {
+    respuestaTexto.value = ''
+    await refreshDetalle()
+  }
 }
 
-async function handleCerrar()   { await cerrar(pqrs.value!.id) }
-async function handleArchivar() { await archivar(pqrs.value!.id) }
+async function handleCerrar() {
+  const ok = await cerrar(pqrs.value!.id)
+  if (ok) await refreshDetalle()
+}
+
+async function handleArchivar() {
+  const ok = await archivar(pqrs.value!.id)
+  if (ok) await refreshDetalle()
+}
+
+async function handleDesactivar() {
+  if (!confirm('¿Seguro que deseas desactivar esta PQRS? Dejará de aparecer en la lista.')) return
+  try {
+    await pqrsApi.deactivate(pqrs.value!.id)
+    router.back()
+  } catch (e: any) {
+    alert(e?.response?.data?.message ?? 'Error al desactivar la PQRS')
+  }
+}
+
+async function enviarCalificacion() {
+  if (!calificacionSeleccionada.value) return
+  savingRating.value = true
+  try {
+    await store.update(pqrs.value!.id, {
+      calificacion_satisfaccion: calificacionSeleccionada.value,
+      comentario_satisfaccion:   comentarioSatisfaccion.value || undefined,
+    })
+    await refreshDetalle()
+    calificacionSeleccionada.value = 0
+    comentarioSatisfaccion.value   = ''
+  } finally {
+    savingRating.value = false
+  }
+}
 </script>
