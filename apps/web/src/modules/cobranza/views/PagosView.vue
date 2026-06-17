@@ -1,9 +1,9 @@
 <template>
-  <div class="space-y-5">
+  <div class="p-6 space-y-5">
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-xl font-bold text-gray-900">Pagos recibidos</h1>
-        <p class="text-sm text-gray-500 mt-0.5">Historial de cobranzas en estado pagada</p>
+        <p class="text-sm text-gray-500 mt-0.5">Historial de cobranzas pagadas</p>
       </div>
     </div>
 
@@ -34,7 +34,7 @@ import type { Cobranza } from '../types/cobranza.types'
 const router = useRouter()
 const store  = useCobranzaStore()
 
-onMounted(() => store.fetchList({ estado: 'pagada', page: 1 }))
+onMounted(() => store.fetchList({ estado: 'pagado', page: 1, limit: 20 }))
 
 function goToDetail(item: Cobranza) {
   router.push(`/cobranza/${item.id}`)

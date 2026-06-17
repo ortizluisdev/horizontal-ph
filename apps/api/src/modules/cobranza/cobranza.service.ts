@@ -1,6 +1,18 @@
-import { CobranzaRepository, type PaginatedCobranzas } from "./cobranza.repository.js";
-import type { Cobranza } from "@horizontal-ph/types";
-import type { CobranzaCreateInput, CobranzaUpdateInput, CobranzaQuery } from "./cobranza.schema.js";
+import {
+  CobranzaRepository,
+  type PaginatedCobranzas,
+} from './cobranza.repository.js';
+import type { Cobranza } from '@horizontal-ph/types';
+import type {
+  CobranzaCreateInput,
+  CobranzaUpdateInput,
+  CobranzaQuery,
+} from './cobranza.schema.js';
+
+// ─── Tipo local con estado garantizado ───────────────────────────────────────
+// Extiende el tipo compartido para asegurar que estado es requerido en este módulo
+
+type CobranzaRow = Cobranza & { estado: string };
 
 // ─── Singleton ────────────────────────────────────────────────────────────────
 
@@ -30,7 +42,7 @@ export class CobranzaService {
     );
     if (duplicate) {
       throw Object.assign(
-        new Error("Ya existe una cobranza con ese número de recibo en este conjunto"),
+        new Error('Ya existe una cobranza con ese número de recibo en este conjunto'),
         { statusCode: 409 }
       );
     }
@@ -40,23 +52,26 @@ export class CobranzaService {
   // ── Update ────────────────────────────────────────────────────────────────
 
   async update(id: string, data: CobranzaUpdateInput): Promise<Cobranza> {
-    const existing = await repo.findById(id);
+    const existing = (await repo.findById(id)) as CobranzaRow | null;
     if (!existing) {
-      throw Object.assign(new Error("Cobranza no encontrada"), { statusCode: 404 });
+      throw Object.assign(
+        new Error('Cobranza no encontrada'),
+        { statusCode: 404 }
+      );
     }
 
-    // No se puede modificar una cobranza anulada
-    if ((existing as any).estado === "anulada") {
+    // No se puede modificar una cobranza cancelada
+    if (existing.estado === 'cancelado') {
       throw Object.assign(
-        new Error("No se puede modificar una cobranza anulada"),
+        new Error('No se puede modificar una cobranza cancelada'),
         { statusCode: 400 }
       );
     }
 
-    // No se puede reabrir una cobranza ya pagada (solo anular)
-    if ((existing as any).estado === "pagada" && data.estado && data.estado !== "anulada") {
+    // Una cobranza pagada solo puede cancelarse
+    if (existing.estado === 'pagado' && data.estado && data.estado !== 'cancelado') {
       throw Object.assign(
-        new Error("Una cobranza pagada solo puede ser anulada"),
+        new Error('Una cobranza pagada solo puede ser cancelada'),
         { statusCode: 400 }
       );
     }
@@ -67,16 +82,17 @@ export class CobranzaService {
   // ── Hard delete ───────────────────────────────────────────────────────────
 
   async remove(id: string): Promise<void> {
-    const existing = await repo.findById(id);
+    const existing = (await repo.findById(id)) as CobranzaRow | null;
     if (!existing) {
-      throw Object.assign(new Error("Cobranza no encontrada"), { statusCode: 404 });
+      throw Object.assign(
+        new Error('Cobranza no encontrada'),
+        { statusCode: 404 }
+      );
     }
 
-    // Solo se pueden eliminar cobranzas anuladas o pendientes
-    const estado = (existing as any).estado as string;
-    if (!["anulada", "pendiente"].includes(estado)) {
+    if (!['cancelado', 'pendiente'].includes(existing.estado)) {
       throw Object.assign(
-        new Error("Solo se pueden eliminar cobranzas en estado pendiente o anulada"),
+        new Error('Solo se pueden eliminar cobranzas en estado pendiente o cancelada'),
         { statusCode: 400 }
       );
     }

@@ -1,6 +1,6 @@
 <template>
-  <div class="space-y-5">
-    <!-- Page header -->
+  <div class="p-6 space-y-5">
+    <!-- Header -->
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-xl font-bold text-gray-900">Cobranza</h1>
@@ -24,6 +24,14 @@
     <!-- Filtros -->
     <CobranzaFilters @apply="store.applyFilters" />
 
+    <!-- Error -->
+    <p
+      v-if="store.error"
+      class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3"
+    >
+      {{ store.error }}
+    </p>
+
     <!-- Tabla -->
     <FacturaTable
       :items="store.items"
@@ -37,14 +45,14 @@
       @page-change="store.changePage"
     />
 
-    <!-- Modal nuevo -->
+    <!-- Modal nueva cobranza -->
     <Teleport to="body">
       <div
         v-if="showForm"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
         @click.self="showForm = false"
       >
-        <div class="w-full max-w-md">
+        <div class="w-full max-w-lg">
           <PagoForm
             modo="crear"
             :show-close="true"
@@ -76,7 +84,7 @@ const { marcarPagada, anular } = useCobranzaEstado()
 
 const showForm = ref(false)
 
-onMounted(() => store.fetchList())
+onMounted(() => store.fetchList({ page: 1, limit: 20 }))
 
 function goToDetail(item: Cobranza) {
   router.push(`/cobranza/${item.id}`)
@@ -89,7 +97,7 @@ async function handlePagar(item: Cobranza) {
 }
 
 async function handleAnular(item: Cobranza) {
-  if (confirm(`¿Anular la cobranza ${item.numero_recibo}? Esta acción no se puede deshacer.`)) {
+  if (confirm(`¿Cancelar la cobranza ${item.numero_recibo}? Esta acción no se puede deshacer.`)) {
     await anular(item.id)
   }
 }

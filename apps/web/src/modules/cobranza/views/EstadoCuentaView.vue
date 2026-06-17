@@ -1,19 +1,16 @@
 <template>
-  <div class="space-y-5">
+  <div class="p-6 space-y-5">
     <div>
       <h1 class="text-xl font-bold text-gray-900">Estado de cuenta</h1>
       <p class="text-sm text-gray-500 mt-0.5">Resumen de deuda por unidad</p>
     </div>
 
     <div v-if="store.loading" class="flex items-center justify-center py-20">
-      <svg class="animate-spin h-7 w-7 text-indigo-500" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-      </svg>
+      <div class="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
     </div>
 
     <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <!-- Card estado de cuenta -->
+      <!-- Card resumen -->
       <div class="lg:col-span-1">
         <EstadoCuentaCard
           :cobranzas="store.items"
@@ -21,7 +18,7 @@
         />
       </div>
 
-      <!-- Lista de pendientes -->
+      <!-- Lista de cobranzas -->
       <div class="lg:col-span-2">
         <FacturaTable
           :items="store.items"
@@ -54,15 +51,16 @@ const store     = useCobranzaStore()
 const authStore = useAuthStore()
 const { marcarPagada, anular } = useCobranzaEstado()
 
-// Si el usuario tiene unidad asignada, filtrar solo sus cobranzas
-const unidadId   = computed(() => authStore.user?.unidad_id ?? undefined)
-const unidadLabel = computed(() => unidadId.value ? `#${unidadId.value.slice(0, 8)}` : 'General')
+const unidadId    = computed(() => authStore.user?.unidad_id ?? undefined)
+const unidadLabel = computed(() =>
+  unidadId.value ? `#${unidadId.value.slice(0, 8)}` : 'General'
+)
 
 onMounted(() => {
   store.fetchList({
     unidadId: unidadId.value,
-    estado:   '',
     page:     1,
+    limit:    20,
   })
 })
 
@@ -77,7 +75,7 @@ async function handlePagar(item: Cobranza) {
 }
 
 async function handleAnular(item: Cobranza) {
-  if (confirm(`¿Anular la cobranza ${item.numero_recibo}?`)) {
+  if (confirm(`¿Cancelar la cobranza ${item.numero_recibo}?`)) {
     await anular(item.id)
   }
 }

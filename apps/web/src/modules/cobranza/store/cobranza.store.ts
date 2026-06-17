@@ -5,54 +5,51 @@ import type {
   Cobranza,
   CobranzaCreatePayload,
   CobranzaUpdatePayload,
-  RegistrarPagoPayload,
   CobranzaFilters,
-  PaginatedCobranzas,
-  ResumenCobranza,
 } from '../types/cobranza.types'
 
 export const useCobranzaStore = defineStore('cobranza', () => {
   // ─── State ────────────────────────────────────────────────────────────────
-  const items    = ref<Cobranza[]>([])
-  const current  = ref<Cobranza | null>(null)
-  const resumen  = ref<ResumenCobranza | null>(null)
-  const total    = ref(0)
-  const page     = ref(1)
-  const pages    = ref(1)
-  const limit    = ref(20)
-  const loading  = ref(false)
-  const saving   = ref(false)
-  const error    = ref<string | null>(null)
-  const filters  = ref<CobranzaFilters>({ page: 1, limit: 20 })
+  const items   = ref<Cobranza[]>([])
+  const current = ref<Cobranza | null>(null)
+  const total   = ref(0)
+  const page    = ref(1)
+  const pages   = ref(0)
+  const limit   = ref(20)
+  const loading = ref(false)
+  const saving  = ref(false)
+  const error   = ref<string | null>(null)
+  const activeFilters = ref<CobranzaFilters>({ page: 1, limit: 20 })
 
   // ─── Getters ──────────────────────────────────────────────────────────────
   const totalPendiente = computed(() =>
-    resumen.value?.total_pendiente ??
-    items.value.filter((c) => c.estado === 'pendiente').reduce((s, c) => s + c.valor_deuda, 0)
+    items.value
+      .filter((c) => ['pendiente', 'parcial'].includes(c.estado))
+      .reduce((sum, c) => sum + (c.valor_deuda ?? c.valor_total), 0)
   )
 
   const totalVencido = computed(() =>
-    (resumen.value?.total_vencido ?? 0) + (resumen.value?.total_mora ?? 0) ||
-    items.value.filter((c) => c.estado === 'vencida' || c.estado === 'en_mora').reduce((s, c) => s + c.valor_deuda, 0)
+    items.value
+      .filter((c) => c.estado === 'vencido')
+      .reduce((sum, c) => sum + (c.valor_deuda ?? c.valor_total), 0)
   )
 
-  const cantidadCriticas = computed(() =>
-    (resumen.value?.cantidad_vencidas ?? 0) + (resumen.value?.cantidad_mora ?? 0)
+  const cantidadPendientes = computed(
+    () => items.value.filter((c) => ['pendiente', 'parcial', 'vencido'].includes(c.estado)).length
   )
 
   // ─── Actions ──────────────────────────────────────────────────────────────
-
   async function fetchList(f: CobranzaFilters = {}) {
     loading.value = true
     error.value   = null
     try {
-      filters.value = { ...filters.value, ...f, page: f.page ?? 1 }
-      const res: PaginatedCobranzas = await cobranzaApi.list(filters.value)
-      items.value = res.data
-      total.value = res.total
-      page.value  = res.page
-      pages.value = res.pages
-      limit.value = res.limit
+      activeFilters.value = { ...activeFilters.value, ...f, page: f.page ?? 1 }
+      const { data } = await cobranzaApi.list(activeFilters.value)
+      items.value = data.data
+      total.value = data.total
+      page.value  = data.page
+      pages.value = data.pages
+      limit.value = data.limit
     } catch (e: any) {
       error.value = e?.response?.data?.message ?? 'Error al cargar cobranzas'
     } finally {
@@ -64,7 +61,8 @@ export const useCobranzaStore = defineStore('cobranza', () => {
     loading.value = true
     error.value   = null
     try {
-      current.value = await cobranzaApi.getById(id)
+      const { data } = await cobranzaApi.getById(id)
+      current.value = data
     } catch (e: any) {
       error.value   = e?.response?.data?.message ?? 'Cobranza no encontrada'
       current.value = null
@@ -73,22 +71,14 @@ export const useCobranzaStore = defineStore('cobranza', () => {
     }
   }
 
-  async function fetchResumen(conjuntoId: string, unidadId?: string) {
-    try {
-      resumen.value = await cobranzaApi.resumen(conjuntoId, unidadId)
-    } catch {
-      resumen.value = null
-    }
-  }
-
   async function create(payload: CobranzaCreatePayload): Promise<Cobranza> {
     saving.value = true
     error.value  = null
     try {
-      const nueva = await cobranzaApi.create(payload)
-      items.value.unshift(nueva)
+      const { data } = await cobranzaApi.create(payload)
+      items.value.unshift(data)
       total.value++
-      return nueva
+      return data
     } catch (e: any) {
       error.value = e?.response?.data?.message ?? 'Error al crear cobranza'
       throw e
@@ -101,9 +91,11 @@ export const useCobranzaStore = defineStore('cobranza', () => {
     saving.value = true
     error.value  = null
     try {
-      const updated = await cobranzaApi.update(id, payload)
-      _replaceInList(updated)
-      return updated
+      const { data } = await cobranzaApi.update(id, payload)
+      const idx = items.value.findIndex((c) => c.id === id)
+      if (idx !== -1) items.value[idx] = data
+      if (current.value?.id === id) current.value = data
+      return data
     } catch (e: any) {
       error.value = e?.response?.data?.message ?? 'Error al actualizar cobranza'
       throw e
@@ -112,29 +104,13 @@ export const useCobranzaStore = defineStore('cobranza', () => {
     }
   }
 
-  async function registrarPago(id: string, payload: RegistrarPagoPayload): Promise<Cobranza> {
-    saving.value = true
-    error.value  = null
-    try {
-      const updated = await cobranzaApi.registrarPago(id, payload)
-      _replaceInList(updated)
-      return updated
-    } catch (e: any) {
-      error.value = e?.response?.data?.message ?? 'Error al registrar pago'
-      throw e
-    } finally {
-      saving.value = false
-    }
-  }
-
-  async function remove(id: string) {
+  async function remove(id: string): Promise<void> {
     saving.value = true
     error.value  = null
     try {
       await cobranzaApi.remove(id)
       items.value = items.value.filter((c) => c.id !== id)
       total.value = Math.max(0, total.value - 1)
-      if (current.value?.id === id) current.value = null
     } catch (e: any) {
       error.value = e?.response?.data?.message ?? 'Error al eliminar cobranza'
       throw e
@@ -144,7 +120,7 @@ export const useCobranzaStore = defineStore('cobranza', () => {
   }
 
   function changePage(p: number) {
-    fetchList({ ...filters.value, page: p })
+    fetchList({ ...activeFilters.value, page: p })
   }
 
   function applyFilters(f: CobranzaFilters) {
@@ -154,20 +130,10 @@ export const useCobranzaStore = defineStore('cobranza', () => {
   function clearError()   { error.value   = null }
   function clearCurrent() { current.value = null }
 
-  function _replaceInList(updated: Cobranza) {
-    const idx = items.value.findIndex((c) => c.id === updated.id)
-    if (idx !== -1) items.value[idx] = updated
-    if (current.value?.id === updated.id) current.value = updated
-  }
-
   return {
-    // state
-    items, current, resumen, total, page, pages, limit, loading, saving, error, filters,
-    // getters
-    totalPendiente, totalVencido, cantidadCriticas,
-    // actions
-    fetchList, fetchOne, fetchResumen,
-    create, update, registrarPago, remove,
+    items, current, total, page, pages, limit, loading, saving, error, activeFilters,
+    totalPendiente, totalVencido, cantidadPendientes,
+    fetchList, fetchOne, create, update, remove,
     changePage, applyFilters, clearError, clearCurrent,
   }
 })

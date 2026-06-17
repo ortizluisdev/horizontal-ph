@@ -1,6 +1,6 @@
 <template>
-  <div class="space-y-5">
-    <!-- Page header -->
+  <div class="p-6 space-y-5">
+    <!-- Header -->
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-xl font-bold text-gray-900">Cobranza</h1>
@@ -19,10 +19,18 @@
     </div>
 
     <!-- Resumen -->
-    <ResumenDeuda :conjunto-id="conjuntoId" />
+    <ResumenDeuda />
 
     <!-- Filtros -->
-    <CobranzaFilters @apply="store.applyFilters" />
+    <CobranzaFilters @apply="onApplyFilters" />
+
+    <!-- Error -->
+    <p
+      v-if="store.error"
+      class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3"
+    >
+      {{ store.error }}
+    </p>
 
     <!-- Tabla -->
     <FacturaTable
@@ -31,11 +39,9 @@
       :total="store.total"
       :current-page="store.page"
       :pages="store.pages"
-      :show-delete="authStore.isAdmin"
       @select="goToDetail"
-      @registrar-pago="openPago"
+      @marcar-pagada="handlePagar"
       @anular="handleAnular"
-      @delete="handleDelete"
       @page-change="store.changePage"
     />
 
@@ -57,24 +63,6 @@
         </div>
       </div>
     </Teleport>
-
-    <!-- Modal: registrar pago -->
-    <Teleport to="body">
-      <div
-        v-if="showPago && pagoCobranza"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
-        @click.self="closePago"
-      >
-        <div class="w-full max-w-md">
-          <PagoForm
-            :cobranza="pagoCobranza"
-            :show-close="true"
-            @close="closePago"
-            @saved="onPagoSaved"
-          />
-        </div>
-      </div>
-    </Teleport>
   </div>
 </template>
 
@@ -88,58 +76,56 @@ import ResumenDeuda from '../components/ResumenDeuda.vue'
 import CobranzaFilters from '../components/CobranzaFilters.vue'
 import FacturaTable from '../components/FacturaTable.vue'
 import CobranzaForm from '../components/CobranzaForm.vue'
-import PagoForm from '../components/PagoForm.vue'
-import type { Cobranza } from '../types/cobranza.types'
+import type { Cobranza, CobranzaFilters as CobranzaFiltersType } from '../types/cobranza.types'
 
 const router    = useRouter()
 const store     = useCobranzaStore()
 const authStore = useAuthStore()
-const { anular } = useCobranzaEstado()
+const { marcarPagada, anular } = useCobranzaEstado()
 
-const conjuntoId   = computed(() => (authStore.user as any)?.conjunto_id ?? '')
-const showForm     = ref(false)
-const showPago     = ref(false)
-const pagoCobranza = ref<Cobranza | null>(null)
+// conjunto_id del usuario autenticado si existe
+const conjuntoId = computed(() =>
+  (authStore.user as any)?.conjunto_id as string | undefined
+)
+
+const showForm = ref(false)
 
 onMounted(() => {
-  store.fetchList()
-  if (conjuntoId.value) store.fetchResumen(conjuntoId.value)
+  store.fetchList({
+    page:       1,
+    limit:      20,
+    conjuntoId: conjuntoId.value,
+  })
 })
 
 function goToDetail(item: Cobranza) {
   router.push(`/cobranza/${item.id}`)
 }
 
-function openPago(item: Cobranza) {
-  pagoCobranza.value = item
-  showPago.value     = true
+function onApplyFilters(filters: CobranzaFiltersType) {
+  store.applyFilters({
+    ...filters,
+    conjuntoId: conjuntoId.value,
+  })
 }
 
-function closePago() {
-  showPago.value     = false
-  pagoCobranza.value = null
+async function handlePagar(item: Cobranza) {
+  if (!confirm(`¿Marcar como pagada la cobranza ${item.numero_recibo}?`)) return
+  await marcarPagada(item.id)
 }
 
 async function handleAnular(item: Cobranza) {
-  if (!confirm(`¿Anular la cobranza ${item.numero_recibo}? Esta acción no se puede deshacer.`)) return
+  if (!confirm(`¿Cancelar la cobranza ${item.numero_recibo}? Esta acción no se puede deshacer.`)) return
   const ok = await anular(item.id)
-  if (!ok) alert('Error al anular la cobranza')
-}
-
-async function handleDelete(item: Cobranza) {
-  if (!confirm(`¿Eliminar la cobranza ${item.numero_recibo}? Esta acción es permanente.`)) return
-  await store.remove(item.id)
+  if (!ok) store.fetchList()
 }
 
 function onSaved() {
   showForm.value = false
-  store.fetchList()
-  if (conjuntoId.value) store.fetchResumen(conjuntoId.value)
-}
-
-function onPagoSaved() {
-  closePago()
-  store.fetchList({ ...store.filters })
-  if (conjuntoId.value) store.fetchResumen(conjuntoId.value)
+  store.fetchList({
+    page:       1,
+    limit:      20,
+    conjuntoId: conjuntoId.value,
+  })
 }
 </script>
