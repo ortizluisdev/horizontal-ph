@@ -1,5 +1,4 @@
 // packages/types/src/index.ts
-
 export interface Role {
   id: string;
   name: string;
@@ -130,20 +129,62 @@ export interface MovimientoInput {
   valor_credit?: number;
 }
 
+export type TipoPqrs      = 'peticion' | 'queja' | 'reclamo' | 'sugerencia';
+export type EstadoPqrs    = 'abierta' | 'en proceso' | 'resuelta' | 'cerrada' | 'archivada';
+export type PrioridadPqrs = 'baja' | 'normal' | 'alta' | 'urgente';
+export type CategoriaPqrs = 'infraestructura' | 'servicios' | 'seguridad' | 'convivencia' | 'otro';
+
 export interface Pqrs {
   id: string;
   conjunto_id: string;
   unidad_id: string;
-  tipo: string;
+  usuario_id?: string | null;
+  numero_radicado: string;
+  tipo: TipoPqrs;
   asunto: string;
+  descripcion: string;
+  categoria?: CategoriaPqrs | null;
+  prioridad: PrioridadPqrs;
+  estado: EstadoPqrs;
+  fecha_radicacion: string;
+  fecha_respuesta?: string | null;
+  fecha_cierre?: string | null;
+  tiempo_resolucion_dias?: number | null;
+  nombre_solicitante?: string | null;
+  email_solicitante?: string | null;
+  telefono_solicitante?: string | null;
+  responsable_asignado_id?: string | null;
+  responsable_asignado_nombre?: string | null;
+  respuesta_descripcion?: string | null;
+  documentos_adjuntos?: unknown | null;
+  evidencia_foto_url?: string | null;
+  ubicacion_afectada?: string | null;
+  requiere_seguimiento?: boolean;
+  fecha_proximo_seguimiento?: string | null;
+  calificacion_satisfaccion?: number | null;
+  comentario_satisfaccion?: string | null;
+  observaciones_internas?: string | null;
+  activo: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by?: string | null;
+  updated_by?: string | null;
 }
 
 export interface PqrsInput {
   conjuntoId: string;
   unidadId: string;
-  tipo: string;
+  tipo: TipoPqrs;
   asunto: string;
-  descripcion?: string;
+  descripcion: string;
+  categoria?: CategoriaPqrs;
+  prioridad?: PrioridadPqrs;
+  nombre_solicitante?: string;
+  email_solicitante?: string;
+  telefono_solicitante?: string;
+  ubicacion_afectada?: string;
+  requiere_seguimiento?: boolean;
+  fecha_proximo_seguimiento?: string;
 }
 
 export interface Notificacion {
@@ -176,40 +217,49 @@ export interface NormativaInput {
   descripcion?: string | null;
 }
 
-// ─── Unidad (alineada con migración 016 y API actual) ────────────────────────
-
-export type TipoUnidad =
-  | 'apartamento'
-  | 'casa'
-  | 'local_comercial'
-  | 'oficina'
-  | 'bodega'
-  | 'parqueadero'
-  | 'otro';
-
 export interface Unidad {
   id: string;
   conjunto_id: string;
-  conjunto_nombre?: string | null;
   nombre: string;
-  descripcion?: string | null;
-  tipo_unidad?: TipoUnidad | null;
-  numero_unidad?: string | null;
+  numero_unidad: string;
   torre?: string | null;
   piso?: number | null;
+  tipo: string;
   area_m2?: number | null;
-  activo: boolean;
-  created_at: string;
-  updated_at: string;
+  area_privada_m2?: number | null;
+  area_comun_m2?: number | null;
+  numero_habitaciones?: number | null;
+  numero_banos?: number | null;
+  tiene_parqueadero?: boolean;
+  numero_parqueaderos?: number;
+  tiene_bodega?: boolean;
+  matricula_inmobiliaria?: string | null;
+  chip_agua?: string | null;
+  chip_gas?: string | null;
+  chip_energia?: string | null;
+  uso?: string | null;
+  estado?: string;
+  activo?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface UnidadInput {
-  conjuntoId: string;
+  conjunto_id: string;
   nombre: string;
-  descripcion?: string;
-  tipo_unidad?: TipoUnidad;
-  numero_unidad?: string;
-  torre?: string;
-  piso?: number;
-  area_m2?: number;
+  numero_unidad: string;
+  torre?: string | null;
+  piso?: number | null;
+  tipo: string;
+  area_m2?: number | null;
+  area_privada_m2?: number | null;
+  area_comun_m2?: number | null;
+  numero_habitaciones?: number | null;
+  numero_banos?: number | null;
+  tiene_parqueadero?: boolean;
+  numero_parqueaderos?: number;
+  tiene_bodega?: boolean;
+  uso?: string | null;
+  estado?: string;
+  activo?: boolean;
 }

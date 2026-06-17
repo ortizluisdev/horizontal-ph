@@ -10,7 +10,6 @@
       Volver
     </button>
 
-    <!-- Loading -->
     <div v-if="store.loading" class="flex items-center justify-center py-20">
       <svg class="animate-spin h-7 w-7 text-indigo-500" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
@@ -23,7 +22,6 @@
     </div>
 
     <template v-else>
-      <!-- Header -->
       <div class="flex items-start gap-4 justify-between flex-wrap">
         <div class="flex items-center gap-3">
           <span class="text-3xl">{{ tipoIcon(pqrs.tipo) }}</span>
@@ -41,7 +39,6 @@
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <!-- Panel principal -->
         <div class="lg:col-span-2 space-y-4">
           <!-- Descripción -->
           <div class="rounded-xl border border-gray-200 bg-white p-5">
@@ -51,18 +48,20 @@
 
           <!-- Datos del caso -->
           <div class="rounded-xl border border-gray-200 bg-white divide-y divide-gray-100">
-            <div v-for="row in detalleRows" :key="row.label"
-              class="flex items-center justify-between px-5 py-3 text-sm">
+            <div
+              v-for="row in detalleRows"
+              :key="row.label"
+              class="flex items-center justify-between px-5 py-3 text-sm"
+            >
               <span class="text-gray-500">{{ row.label }}</span>
               <span class="font-medium text-gray-900 text-right max-w-xs truncate">{{ row.value }}</span>
             </div>
           </div>
 
-          <!-- Acciones admin -->
-          <div v-if="authStore.isAdmin" class="rounded-xl border border-gray-200 bg-white p-5 space-y-3">
+          <!-- Acciones admin — detección por role_name en JWT -->
+          <div v-if="isAdmin" class="rounded-xl border border-gray-200 bg-white p-5 space-y-3">
             <h3 class="text-sm font-semibold text-gray-900">Gestión</h3>
 
-            <!-- Tomar caso -->
             <div v-if="pqrs.estado === 'abierta'" class="flex gap-2">
               <input
                 v-model="responsableNombre"
@@ -79,8 +78,7 @@
               </button>
             </div>
 
-            <!-- Resolver -->
-            <div v-if="pqrs.estado === 'en_proceso'" class="space-y-2">
+            <div v-if="pqrs.estado === 'en proceso'" class="space-y-2">
               <textarea
                 v-model="respuestaTexto"
                 rows="3"
@@ -96,10 +94,9 @@
               </button>
             </div>
 
-            <!-- Cerrar / Archivar -->
             <div class="flex gap-2">
               <button
-                v-if="['resuelta'].includes(pqrs.estado)"
+                v-if="pqrs.estado === 'resuelta'"
                 :disabled="processing"
                 class="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60 transition-colors"
                 @click="handleCerrar"
@@ -107,7 +104,7 @@
                 Cerrar
               </button>
               <button
-                v-if="['cerrada'].includes(pqrs.estado)"
+                v-if="pqrs.estado === 'cerrada'"
                 :disabled="processing"
                 class="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-60 transition-colors"
                 @click="handleArchivar"
@@ -120,22 +117,18 @@
           </div>
         </div>
 
-        <!-- Panel lateral: timeline -->
         <div class="space-y-4">
-          <!-- Solicitante -->
           <div v-if="pqrs.nombre_solicitante" class="rounded-xl border border-gray-200 bg-white p-4 space-y-2">
             <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Solicitante</h3>
             <p class="text-sm font-medium text-gray-900">{{ pqrs.nombre_solicitante }}</p>
             <p v-if="pqrs.email_solicitante" class="text-xs text-gray-500">{{ pqrs.email_solicitante }}</p>
           </div>
 
-          <!-- Responsable -->
           <div v-if="pqrs.responsable_asignado_nombre" class="rounded-xl border border-indigo-100 bg-indigo-50 p-4">
             <h3 class="text-xs font-semibold text-indigo-600 uppercase tracking-wide mb-1">Responsable</h3>
             <p class="text-sm font-medium text-indigo-900">{{ pqrs.responsable_asignado_nombre }}</p>
           </div>
 
-          <!-- Timeline -->
           <PqrsTimeline :items="store.seguimiento" />
         </div>
       </div>
@@ -148,19 +141,29 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePqrsStore } from '../store/pqrs.store'
 import { usePqrsGestion, tipoIcon, prioridadBadgeClass, formatDateTime } from '../composables/usePqrs'
-import { useAuthStore } from '@/modules/auth/store/auth.store'
 import PqrsStatusBadge from '../components/PqrsStatusBadge.vue'
 import PqrsTimeline from '../components/PqrsTimeline.vue'
 
-const route     = useRoute()
-const router    = useRouter()
-const store     = usePqrsStore()
-const authStore = useAuthStore()
+const route  = useRoute()
+const router = useRouter()
+const store  = usePqrsStore()
 const { processing, error: gestionError, tomarCaso, resolver, cerrar, archivar } = usePqrsGestion()
 
-const pqrs             = computed(() => store.current)
+const pqrs              = computed(() => store.current)
 const responsableNombre = ref('')
 const respuestaTexto    = ref('')
+
+// Detecta rol administrador desde el JWT almacenado en localStorage
+const isAdmin = computed(() => {
+  try {
+    const token = localStorage.getItem('token') ?? localStorage.getItem('access_token') ?? ''
+    if (!token) return false
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    return payload?.role_name === 'administrador' || payload?.role === 'administrador'
+  } catch {
+    return false
+  }
+})
 
 onMounted(() => store.fetchOne(route.params.id as string))
 onUnmounted(() => store.clearCurrent())
@@ -190,6 +193,6 @@ async function handleResolver() {
   if (ok) respuestaTexto.value = ''
 }
 
-async function handleCerrar()  { await cerrar(pqrs.value!.id) }
+async function handleCerrar()   { await cerrar(pqrs.value!.id) }
 async function handleArchivar() { await archivar(pqrs.value!.id) }
 </script>

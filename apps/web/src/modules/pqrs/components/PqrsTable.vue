@@ -7,8 +7,6 @@
       </h3>
       <slot name="actions" />
     </div>
-
-    <!-- Skeleton -->
     <div v-if="loading" class="divide-y divide-gray-100">
       <div v-for="i in 5" :key="i" class="flex items-center gap-4 px-5 py-4 animate-pulse">
         <div class="h-4 w-8  rounded bg-gray-200" />
@@ -18,14 +16,10 @@
         <div class="h-5 w-16 rounded-full bg-gray-200" />
       </div>
     </div>
-
-    <!-- Empty -->
     <div v-else-if="!items.length" class="flex flex-col items-center py-16 text-gray-400">
       <span class="text-4xl mb-3">📭</span>
       <p class="text-sm">No hay PQRS registradas</p>
     </div>
-
-    <!-- Tabla desktop -->
     <div v-else class="hidden md:block overflow-x-auto">
       <table class="w-full text-sm">
         <thead class="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
@@ -75,7 +69,7 @@
                   Tomar
                 </button>
                 <button
-                  v-if="item.estado === 'en_proceso'"
+                  v-if="item.estado === 'en proceso'"
                   class="rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors"
                   @click="emit('resolver', item)"
                 >
@@ -95,8 +89,6 @@
         </tbody>
       </table>
     </div>
-
-    <!-- Cards mobile -->
     <div class="md:hidden divide-y divide-gray-100">
       <div
         v-for="item in items"
@@ -119,8 +111,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Paginación -->
     <div v-if="pages > 1" class="flex items-center justify-between border-t border-gray-100 px-5 py-3">
       <p class="text-xs text-gray-500">Página {{ currentPage }} de {{ pages }} · {{ total }} registros</p>
       <div class="flex gap-1">
@@ -138,20 +128,25 @@
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
 import type { Pqrs } from '../types/pqrs.types'
 import { tipoIcon, prioridadBadgeClass, formatDateTime } from '../composables/usePqrs'
 import PqrsStatusBadge from './PqrsStatusBadge.vue'
-
-defineProps<{
-  items: Pqrs[]
-  loading?: boolean
-  total?: number
-  currentPage?: number
-  pages?: number
-}>()
-
+const props = withDefaults(
+  defineProps<{
+    items: Pqrs[]
+    loading?: boolean
+    total?: number
+    currentPage?: number
+    pages?: number
+  }>(),
+  {
+    loading: false,
+    total: 0,
+    currentPage: 1,
+    pages: 1,
+  }
+)
 const emit = defineEmits<{
   (e: 'select',      item: Pqrs): void
   (e: 'tomar',       item: Pqrs): void

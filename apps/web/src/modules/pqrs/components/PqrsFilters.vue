@@ -1,10 +1,13 @@
 <template>
   <div class="bg-white rounded-xl border border-gray-200 p-4">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-      <!-- Tipo -->
       <div>
         <label class="block text-xs font-medium text-gray-500 mb-1">Tipo</label>
-        <select v-model="local.tipo" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400" @change="emit('change', local)">
+        <select
+          v-model="local.tipo"
+          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
+          @change="emit('change', local)"
+        >
           <option value="">Todos</option>
           <option v-for="t in TIPOS_PQRS" :key="t.value" :value="t.value">
             {{ t.icon }} {{ t.label }}
@@ -12,31 +15,39 @@
         </select>
       </div>
 
-      <!-- Estado -->
       <div>
         <label class="block text-xs font-medium text-gray-500 mb-1">Estado</label>
-        <select v-model="local.estado" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400" @change="emit('change', local)">
+        <select
+          v-model="local.estado"
+          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
+          @change="emit('change', local)"
+        >
           <option v-for="e in ESTADOS_PQRS" :key="e.value" :value="e.value">{{ e.label }}</option>
         </select>
       </div>
 
-      <!-- Prioridad -->
       <div>
         <label class="block text-xs font-medium text-gray-500 mb-1">Prioridad</label>
-        <select v-model="local.prioridad" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400" @change="emit('change', local)">
+        <select
+          v-model="local.prioridad"
+          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
+          @change="emit('change', local)"
+        >
           <option v-for="p in PRIORIDADES_PQRS" :key="p.value" :value="p.value">{{ p.label }}</option>
         </select>
       </div>
 
-      <!-- Categoría -->
       <div>
         <label class="block text-xs font-medium text-gray-500 mb-1">Categoría</label>
-        <select v-model="local.categoria" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400" @change="emit('change', local)">
+        <select
+          v-model="local.categoria"
+          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
+          @change="emit('change', local)"
+        >
           <option v-for="c in CATEGORIAS_PQRS" :key="c.value" :value="c.value">{{ c.label }}</option>
         </select>
       </div>
 
-      <!-- Acciones -->
       <div class="flex items-end gap-2">
         <button
           class="flex-1 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition-colors"
@@ -53,7 +64,6 @@
       </div>
     </div>
 
-    <!-- Búsqueda por radicado -->
     <div class="mt-3">
       <input
         v-model="local.numeroRadicado"

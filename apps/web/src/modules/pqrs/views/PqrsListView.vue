@@ -1,6 +1,5 @@
 <template>
   <div class="space-y-5">
-    <!-- Header -->
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-xl font-bold text-gray-900">PQRS</h1>
@@ -33,28 +32,29 @@
       </div>
     </div>
 
-    <!-- Filtros -->
     <PqrsFilters @apply="store.applyFilters" />
 
-    <!-- Vista: tabla o cards -->
     <div class="flex items-center justify-end gap-2">
       <button
-        :class="['rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
-                 vista === 'tabla' ? 'bg-indigo-600 text-white' : 'border border-gray-300 text-gray-600 hover:bg-gray-50']"
+        :class="[
+          'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
+          vista === 'tabla' ? 'bg-indigo-600 text-white' : 'border border-gray-300 text-gray-600 hover:bg-gray-50',
+        ]"
         @click="vista = 'tabla'"
       >
         ☰ Lista
       </button>
       <button
-        :class="['rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
-                 vista === 'cards' ? 'bg-indigo-600 text-white' : 'border border-gray-300 text-gray-600 hover:bg-gray-50']"
+        :class="[
+          'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
+          vista === 'cards' ? 'bg-indigo-600 text-white' : 'border border-gray-300 text-gray-600 hover:bg-gray-50',
+        ]"
         @click="vista = 'cards'"
       >
         ⊞ Tarjetas
       </button>
     </div>
 
-    <!-- Tabla -->
     <PqrsTable
       v-if="vista === 'tabla'"
       :items="store.items"
@@ -68,9 +68,13 @@
       @page-change="store.changePage"
     />
 
-    <!-- Cards -->
     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      <div v-if="store.loading" v-for="i in 6" :key="i" class="rounded-xl border border-gray-200 bg-white p-5 animate-pulse space-y-3">
+      <div
+        v-if="store.loading"
+        v-for="i in 6"
+        :key="i"
+        class="rounded-xl border border-gray-200 bg-white p-5 animate-pulse space-y-3"
+      >
         <div class="h-4 w-3/4 rounded bg-gray-200" />
         <div class="h-3 w-full rounded bg-gray-200" />
         <div class="h-3 w-1/2 rounded bg-gray-200" />
@@ -82,14 +86,15 @@
         :pqrs="item"
         @select="goToDetail"
       />
-      <div v-if="!store.loading && !store.items.length"
-        class="col-span-full flex flex-col items-center py-16 text-gray-400">
+      <div
+        v-if="!store.loading && !store.items.length"
+        class="col-span-full flex flex-col items-center py-16 text-gray-400"
+      >
         <span class="text-4xl mb-3">📭</span>
         <p class="text-sm">No hay PQRS para mostrar</p>
       </div>
     </div>
 
-    <!-- Modal nueva PQRS -->
     <Teleport to="body">
       <div
         v-if="showForm"
@@ -97,11 +102,7 @@
         @click.self="showForm = false"
       >
         <div class="w-full max-w-xl max-h-[90vh] overflow-y-auto">
-          <PqrsForm
-            :show-close="true"
-            @close="showForm = false"
-            @saved="onSaved"
-          />
+          <PqrsForm :show-close="true" @close="showForm = false" @saved="onSaved" />
         </div>
       </div>
     </Teleport>
@@ -119,8 +120,8 @@ import PqrsCard from '../components/PqrsCard.vue'
 import PqrsForm from '../components/PqrsForm.vue'
 import type { Pqrs } from '../types/pqrs.types'
 
-const router  = useRouter()
-const store   = usePqrsStore()
+const router = useRouter()
+const store  = usePqrsStore()
 const { tomarCaso, resolver } = usePqrsGestion()
 
 const showForm = ref(false)
@@ -132,12 +133,12 @@ function goToDetail(item: Pqrs) { router.push(`/pqrs/${item.id}`) }
 
 async function handleTomar(item: Pqrs) {
   const nombre = prompt('¿Nombre del responsable asignado?')
-  if (nombre) await tomarCaso(item.id, nombre)
+  if (nombre?.trim()) await tomarCaso(item.id, nombre.trim())
 }
 
 async function handleResolver(item: Pqrs) {
   const respuesta = prompt('Ingresa la respuesta / solución dada:')
-  if (respuesta) await resolver(item.id, respuesta)
+  if (respuesta?.trim()) await resolver(item.id, respuesta.trim())
 }
 
 function onSaved() {

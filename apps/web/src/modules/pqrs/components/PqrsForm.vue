@@ -10,6 +10,11 @@
     </div>
 
     <form @submit.prevent="handleSubmit" novalidate class="p-5 space-y-4">
+      <!-- conjuntoId / unidadId ocultos con error visible si faltan -->
+      <div v-if="errors.conjuntoId || errors.unidadId" class="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+        {{ errors.conjuntoId || errors.unidadId }}
+      </div>
+
       <!-- Tipo -->
       <div>
         <label class="block text-xs font-medium text-gray-600 mb-2">Tipo de solicitud *</label>
@@ -18,10 +23,12 @@
             v-for="t in TIPOS_PQRS"
             :key="t.value"
             type="button"
-            :class="['rounded-lg border-2 px-3 py-2.5 text-sm font-medium transition-all text-center',
-                     form.tipo === t.value
-                       ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                       : 'border-gray-200 hover:border-gray-300 text-gray-600']"
+            :class="[
+              'rounded-lg border-2 px-3 py-2.5 text-sm font-medium transition-all text-center',
+              form.tipo === t.value
+                ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                : 'border-gray-200 hover:border-gray-300 text-gray-600',
+            ]"
             @click="form.tipo = t.value; errors.tipo = undefined"
           >
             <div class="text-xl mb-0.5">{{ t.icon }}</div>
@@ -65,14 +72,18 @@
         <div>
           <label class="block text-xs font-medium text-gray-600 mb-1">Categoría</label>
           <select v-model="form.categoria" :class="field()">
-            <option value="">Seleccionar...</option>
-            <option v-for="c in CATEGORIAS_PQRS.slice(1)" :key="c.value" :value="c.value">{{ c.label }}</option>
+            <option :value="undefined">Seleccionar...</option>
+            <option v-for="c in CATEGORIAS_PQRS.slice(1)" :key="c.value" :value="c.value">
+              {{ c.label }}
+            </option>
           </select>
         </div>
         <div>
           <label class="block text-xs font-medium text-gray-600 mb-1">Prioridad</label>
           <select v-model="form.prioridad" :class="field()">
-            <option v-for="p in PRIORIDADES_PQRS.slice(1)" :key="p.value" :value="p.value">{{ p.label }}</option>
+            <option v-for="p in PRIORIDADES_PQRS.slice(1)" :key="p.value" :value="p.value">
+              {{ p.label }}
+            </option>
           </select>
         </div>
       </div>
@@ -90,7 +101,9 @@
 
       <!-- Datos del solicitante -->
       <div class="border-t border-gray-100 pt-4 space-y-3">
-        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Datos del solicitante (opcional)</p>
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          Datos del solicitante (opcional)
+        </p>
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">Nombre</label>
@@ -147,20 +160,31 @@
 </template>
 
 <script setup lang="ts">
-import { usePqrsForm, TIPOS_PQRS, CATEGORIAS_PQRS, PRIORIDADES_PQRS } from '../composables/usePqrs'
+import { TIPOS_PQRS, CATEGORIAS_PQRS, PRIORIDADES_PQRS } from '../composables/usePqrs'
+import { usePqrsForm } from '../composables/usePqrs'
 import type { Pqrs } from '../types/pqrs.types'
 
-const props = defineProps<{ conjuntoId?: string; unidadId?: string; showClose?: boolean }>()
-const emit  = defineEmits<{ (e: 'close'): void; (e: 'saved', p: Pqrs): void }>()
+const props = defineProps<{
+  conjuntoId?: string
+  unidadId?:   string
+  showClose?:  boolean
+}>()
+const emit = defineEmits<{
+  (e: 'close'): void
+  (e: 'saved', p: Pqrs): void
+}>()
 
-const { form, errors, saving, serverError, submit, reset } = usePqrsForm()
-
-if (props.conjuntoId) form.value.conjuntoId = props.conjuntoId
-if (props.unidadId)   form.value.unidadId   = props.unidadId
+const { form, errors, saving, serverError, submit, reset } = usePqrsForm(
+  props.conjuntoId,
+  props.unidadId
+)
 
 async function handleSubmit() {
   const result = await submit()
-  if (result) { emit('saved', result); reset() }
+  if (result) {
+    emit('saved', result)
+    reset()
+  }
 }
 
 function field(error?: string) {

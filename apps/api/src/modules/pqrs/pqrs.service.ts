@@ -1,12 +1,8 @@
-import { PqrsRepository, type PaginatedPqrs } from "./pqrs.repository.js";
-import type { Pqrs } from "@horizontal-ph/types";
-import type { PqrsCreateInput, PqrsUpdateInput, PqrsQuery } from "./pqrs.schema.js";
-
-// ─── Singleton ────────────────────────────────────────────────────────────────
+import { PqrsRepository, type PaginatedPqrs } from './pqrs.repository.js';
+import type { Pqrs } from '@horizontal-ph/types';
+import type { PqrsCreateInput, PqrsUpdateInput, PqrsQuery } from './pqrs.schema.js';
 
 const repo = new PqrsRepository();
-
-// ─── Service ──────────────────────────────────────────────────────────────────
 
 export class PqrsService {
 
@@ -21,7 +17,7 @@ export class PqrsService {
   async getSeguimiento(pqrsId: string, tenantId: string) {
     const result = await repo.getSeguimiento(pqrsId, tenantId);
     if (result === null) {
-      throw Object.assign(new Error("PQRS no encontrada"), { statusCode: 404 });
+      throw Object.assign(new Error('PQRS no encontrada'), { statusCode: 404 });
     }
     return result;
   }
@@ -30,48 +26,48 @@ export class PqrsService {
     return repo.create(data, tenantId);
   }
 
-  async update(id: string, data: PqrsUpdateInput, tenantId: string, userId?: string): Promise<Pqrs> {
+  async update(
+    id: string,
+    data: PqrsUpdateInput,
+    tenantId: string,
+    userId?: string
+  ): Promise<Pqrs> {
     const existing = await repo.findById(id, tenantId);
     if (!existing) {
-      throw Object.assign(new Error("PQRS no encontrada"), { statusCode: 404 });
+      throw Object.assign(new Error('PQRS no encontrada'), { statusCode: 404 });
     }
 
-    const estado = (existing as any).estado as string;
-
-    // No se puede modificar una PQRS archivada
-    if (estado === "archivada") {
+    if (existing.estado === 'archivada') {
       throw Object.assign(
-        new Error("No se puede modificar una PQRS archivada"),
+        new Error('No se puede modificar una PQRS archivada'),
         { statusCode: 400 }
       );
     }
 
-    // Solo se puede calificar si está resuelta o cerrada
-    if (data.calificacion_satisfaccion && !["resuelta", "cerrada"].includes(estado)) {
+    if (
+      data.calificacion_satisfaccion !== undefined &&
+      !['resuelta', 'cerrada'].includes(existing.estado)
+    ) {
       throw Object.assign(
-        new Error("Solo se puede calificar una PQRS resuelta o cerrada"),
+        new Error('Solo se puede calificar una PQRS resuelta o cerrada'),
         { statusCode: 400 }
       );
     }
 
-    return (await repo.update(id, data, tenantId, userId)) as Pqrs;
+    return (await repo.update(id, data, existing, tenantId, userId)) as Pqrs;
   }
 
   async remove(id: string, tenantId: string): Promise<void> {
     const existing = await repo.findById(id, tenantId);
     if (!existing) {
-      throw Object.assign(new Error("PQRS no encontrada"), { statusCode: 404 });
+      throw Object.assign(new Error('PQRS no encontrada'), { statusCode: 404 });
     }
-
-    // Solo se pueden eliminar PQRS archivadas
-    const estado = (existing as any).estado as string;
-    if (estado !== "archivada") {
+    if (existing.estado !== 'archivada') {
       throw Object.assign(
-        new Error("Solo se pueden eliminar PQRS en estado archivada"),
+        new Error('Solo se pueden eliminar PQRS en estado archivada'),
         { statusCode: 400 }
       );
     }
-
     await repo.remove(id);
   }
 }

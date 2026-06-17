@@ -1,67 +1,53 @@
-import { z } from "zod";
+import { z } from 'zod';
 
-// ─── Enums ────────────────────────────────────────────────────────────────────
-
-export const tipoPqrsEnum = z.enum([
-  "peticion",
-  "queja",
-  "reclamo",
-  "sugerencia",
-]);
+export const tipoPqrsEnum = z.enum(['peticion', 'queja', 'reclamo', 'sugerencia']);
 
 export const estadoPqrsEnum = z.enum([
-  "abierta",
-  "en_proceso",
-  "resuelta",
-  "cerrada",
-  "archivada",
+  'abierta',
+  'en proceso',
+  'resuelta',
+  'cerrada',
+  'archivada',
 ]);
 
-export const prioridadPqrsEnum = z.enum([
-  "baja",
-  "normal",
-  "alta",
-  "urgente",
-]);
+export const prioridadPqrsEnum = z.enum(['baja', 'normal', 'alta', 'urgente']);
 
 export const categoriaPqrsEnum = z.enum([
-  "infraestructura",
-  "servicios",
-  "seguridad",
-  "convivencia",
-  "otro",
+  'infraestructura',
+  'servicios',
+  'seguridad',
+  'convivencia',
+  'otro',
 ]);
-
-// ─── Schemas ──────────────────────────────────────────────────────────────────
 
 export const pqrsCreateSchema = z.object({
   conjuntoId: z
-    .string({ required_error: "conjuntoId es obligatorio" })
-    .uuid("conjuntoId debe ser un UUID válido"),
+    .string({ required_error: 'conjuntoId es obligatorio' })
+    .uuid('conjuntoId debe ser un UUID válido'),
   unidadId: z
-    .string({ required_error: "unidadId es obligatorio" })
-    .uuid("unidadId debe ser un UUID válido"),
-  usuarioId: z.string().uuid().optional(),
-  tipo:      tipoPqrsEnum,
+    .string({ required_error: 'unidadId es obligatorio' })
+    .uuid('unidadId debe ser un UUID válido'),
+  usuarioId:   z.string().uuid().optional(),
+  tipo:        tipoPqrsEnum,
   asunto: z
-    .string({ required_error: "El asunto es obligatorio" })
-    .min(5, "El asunto debe tener al menos 5 caracteres")
+    .string({ required_error: 'El asunto es obligatorio' })
+    .min(5, 'El asunto debe tener al menos 5 caracteres')
     .max(300)
     .trim(),
   descripcion: z
-    .string({ required_error: "La descripción es obligatoria" })
-    .min(10, "La descripción debe tener al menos 10 caracteres")
+    .string({ required_error: 'La descripción es obligatoria' })
+    .min(10, 'La descripción debe tener al menos 10 caracteres')
     .max(2000)
     .trim(),
-  categoria:             categoriaPqrsEnum.optional(),
-  prioridad:             prioridadPqrsEnum.optional().default("normal"),
-  nombre_solicitante:    z.string().max(200).trim().optional(),
-  email_solicitante:     z.string().email("Email inválido").optional(),
-  telefono_solicitante:  z.string().max(20).trim().optional(),
-  ubicacion_afectada:    z.string().max(300).trim().optional(),
-  evidencia_foto_url:    z.string().url("URL inválida").optional(),
-  requiere_seguimiento:  z.boolean().optional().default(false),
-  fecha_proximo_seguimiento: z.string().date("Formato de fecha inválido (YYYY-MM-DD)").optional(),
+  categoria:                 categoriaPqrsEnum.optional(),
+  prioridad:                 prioridadPqrsEnum.optional().default('normal'),
+  nombre_solicitante:        z.string().max(200).trim().optional(),
+  email_solicitante:         z.string().email('Email inválido').optional(),
+  telefono_solicitante:      z.string().max(20).trim().optional(),
+  ubicacion_afectada:        z.string().max(300).trim().optional(),
+  evidencia_foto_url:        z.string().url('URL inválida').optional(),
+  requiere_seguimiento:      z.boolean().optional().default(false),
+  fecha_proximo_seguimiento: z.string().date('Formato de fecha inválido (YYYY-MM-DD)').optional(),
 });
 
 export const pqrsUpdateSchema = z.object({
@@ -79,7 +65,7 @@ export const pqrsUpdateSchema = z.object({
 });
 
 export const pqrsParamsSchema = z.object({
-  id: z.string().uuid("El id debe ser un UUID válido"),
+  id: z.string().uuid('El id debe ser un UUID válido'),
 });
 
 export const pqrsQuerySchema = z.object({
@@ -95,8 +81,6 @@ export const pqrsQuerySchema = z.object({
   fechaHasta:     z.string().datetime().optional(),
   numeroRadicado: z.string().optional(),
 });
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 export type PqrsCreateInput = z.infer<typeof pqrsCreateSchema>;
 export type PqrsUpdateInput = z.infer<typeof pqrsUpdateSchema>;

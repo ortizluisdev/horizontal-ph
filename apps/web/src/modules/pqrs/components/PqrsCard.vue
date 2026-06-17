@@ -3,7 +3,6 @@
     class="group bg-white rounded-xl border border-gray-200 p-5 hover:border-indigo-300 hover:shadow-sm transition-all cursor-pointer space-y-3"
     @click="emit('select', pqrs)"
   >
-    <!-- Header -->
     <div class="flex items-start justify-between gap-3">
       <div class="flex items-center gap-2 min-w-0">
         <span class="text-xl shrink-0">{{ tipoIcon(pqrs.tipo) }}</span>
@@ -15,10 +14,8 @@
       <PqrsStatusBadge :estado="pqrs.estado" />
     </div>
 
-    <!-- Descripción -->
     <p class="text-sm text-gray-500 line-clamp-2">{{ pqrs.descripcion }}</p>
 
-    <!-- Footer -->
     <div class="flex items-center justify-between pt-1">
       <div class="flex items-center gap-2">
         <span :class="['rounded-full px-2 py-0.5 text-xs', prioridadBadgeClass(pqrs.prioridad)]">
@@ -31,8 +28,10 @@
       <time class="text-xs text-gray-400">{{ formatDateTime(pqrs.fecha_radicacion) }}</time>
     </div>
 
-    <!-- Responsable -->
-    <div v-if="pqrs.responsable_asignado_nombre" class="flex items-center gap-1.5 pt-1 border-t border-gray-100">
+    <div
+      v-if="pqrs.responsable_asignado_nombre"
+      class="flex items-center gap-1.5 pt-1 border-t border-gray-100"
+    >
       <div class="h-5 w-5 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-bold">
         {{ pqrs.responsable_asignado_nombre[0] }}
       </div>

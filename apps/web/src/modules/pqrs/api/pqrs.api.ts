@@ -11,7 +11,7 @@ import type {
 const BASE = '/pqrs'
 
 export const pqrsApi = {
-  list(filters: PqrsFilters = {}): Promise<PaginatedPqrs> {
+  list(filters: PqrsFilters = {}): Promise<{ data: PaginatedPqrs }> {
     const params: Record<string, string | number> = {}
     if (filters.page)           params.page           = filters.page
     if (filters.limit)          params.limit          = filters.limit
@@ -22,23 +22,23 @@ export const pqrsApi = {
     if (filters.prioridad)      params.prioridad      = filters.prioridad
     if (filters.categoria)      params.categoria      = filters.categoria
     if (filters.numeroRadicado) params.numeroRadicado = filters.numeroRadicado
-    return http.get<PaginatedPqrs>(BASE, { params }).then((r) => r.data)
+    return http.get<PaginatedPqrs>(BASE, { params })
   },
 
-  getById(id: string): Promise<Pqrs> {
-    return http.get<Pqrs>(`${BASE}/${id}`).then((r) => r.data)
+  getById(id: string): Promise<{ data: Pqrs }> {
+    return http.get<Pqrs>(`${BASE}/${id}`)
   },
 
-  getSeguimiento(id: string): Promise<PqrsSeguimiento[]> {
-    return http.get<PqrsSeguimiento[]>(`${BASE}/${id}/seguimiento`).then((r) => r.data)
+  getSeguimiento(id: string): Promise<{ data: PqrsSeguimiento[] }> {
+    return http.get<PqrsSeguimiento[]>(`${BASE}/${id}/seguimiento`)
   },
 
-  create(payload: PqrsCreatePayload): Promise<Pqrs> {
-    return http.post<Pqrs>(BASE, payload).then((r) => r.data)
+  create(payload: PqrsCreatePayload): Promise<{ data: Pqrs }> {
+    return http.post<Pqrs>(BASE, payload)
   },
 
-  update(id: string, payload: PqrsUpdatePayload): Promise<Pqrs> {
-    return http.patch<Pqrs>(`${BASE}/${id}`, payload).then((r) => r.data)
+  update(id: string, payload: PqrsUpdatePayload): Promise<{ data: Pqrs }> {
+    return http.patch<Pqrs>(`${BASE}/${id}`, payload)
   },
 
   remove(id: string): Promise<void> {

@@ -6,12 +6,10 @@ import type {
   PqrsCreatePayload,
   PqrsUpdatePayload,
   PqrsFilters,
-  PaginatedPqrs,
   PqrsSeguimiento,
 } from '../types/pqrs.types'
 
 export const usePqrsStore = defineStore('pqrs', () => {
-  // ─── State ────────────────────────────────────────────────────────────────
   const items       = ref<Pqrs[]>([])
   const current     = ref<Pqrs | null>(null)
   const seguimiento = ref<PqrsSeguimiento[]>([])
@@ -24,18 +22,16 @@ export const usePqrsStore = defineStore('pqrs', () => {
   const error       = ref<string | null>(null)
   const filters     = ref<PqrsFilters>({ page: 1, limit: 20 })
 
-  // ─── Getters ──────────────────────────────────────────────────────────────
-  const abiertas    = computed(() => items.value.filter((p) => p.estado === 'abierta').length)
-  const enProceso   = computed(() => items.value.filter((p) => p.estado === 'en_proceso').length)
-  const urgentes    = computed(() => items.value.filter((p) => p.prioridad === 'urgente').length)
+  const abiertas  = computed(() => items.value.filter((p) => p.estado === 'abierta').length)
+  const enProceso = computed(() => items.value.filter((p) => p.estado === 'en proceso').length)
+  const urgentes  = computed(() => items.value.filter((p) => p.prioridad === 'urgente').length)
 
-  // ─── Actions ──────────────────────────────────────────────────────────────
   async function fetchList(f: PqrsFilters = {}) {
     loading.value = true
     error.value   = null
     try {
-      filters.value = { ...filters.value, ...f, page: f.page ?? 1 }
-      const res: PaginatedPqrs = await pqrsApi.list(filters.value)
+      filters.value     = { ...filters.value, ...f, page: f.page ?? 1 }
+      const { data: res } = await pqrsApi.list(filters.value)
       items.value = res.data
       total.value = res.total
       page.value  = res.page
@@ -52,14 +48,14 @@ export const usePqrsStore = defineStore('pqrs', () => {
     loading.value = true
     error.value   = null
     try {
-      const [pqrs, seg] = await Promise.all([
+      const [{ data: pqrs }, { data: seg }] = await Promise.all([
         pqrsApi.getById(id),
         pqrsApi.getSeguimiento(id),
       ])
       current.value     = pqrs
       seguimiento.value = seg
     } catch (e: any) {
-      error.value = e?.response?.data?.message ?? 'PQRS no encontrada'
+      error.value   = e?.response?.data?.message ?? 'PQRS no encontrada'
       current.value = null
     } finally {
       loading.value = false
@@ -70,7 +66,7 @@ export const usePqrsStore = defineStore('pqrs', () => {
     saving.value = true
     error.value  = null
     try {
-      const nueva = await pqrsApi.create(payload)
+      const { data: nueva } = await pqrsApi.create(payload)
       items.value.unshift(nueva)
       total.value++
       return nueva
@@ -86,7 +82,7 @@ export const usePqrsStore = defineStore('pqrs', () => {
     saving.value = true
     error.value  = null
     try {
-      const updated = await pqrsApi.update(id, payload)
+      const { data: updated } = await pqrsApi.update(id, payload)
       const idx = items.value.findIndex((p) => p.id === id)
       if (idx !== -1) items.value[idx] = updated
       if (current.value?.id === id) current.value = updated
@@ -114,10 +110,10 @@ export const usePqrsStore = defineStore('pqrs', () => {
     }
   }
 
-  function changePage(p: number) { fetchList({ ...filters.value, page: p }) }
+  function changePage(p: number)      { fetchList({ ...filters.value, page: p }) }
   function applyFilters(f: PqrsFilters) { fetchList({ ...f, page: 1 }) }
-  function clearError() { error.value = null }
-  function clearCurrent() { current.value = null; seguimiento.value = [] }
+  function clearError()               { error.value = null }
+  function clearCurrent()             { current.value = null; seguimiento.value = [] }
 
   return {
     items, current, seguimiento, total, page, pages, limit,

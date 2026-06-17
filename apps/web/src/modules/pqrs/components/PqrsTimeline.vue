@@ -12,10 +12,11 @@
     <div v-else class="p-5">
       <ol class="relative border-l border-gray-200 space-y-6 ml-3">
         <li v-for="(evt, idx) in items" :key="evt.id" class="ml-6">
-          <!-- Dot -->
           <span
-            :class="['absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full ring-4 ring-white text-xs',
-                     idx === 0 ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-500']"
+            :class="[
+              'absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full ring-4 ring-white text-xs',
+              idx === 0 ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-500',
+            ]"
           >
             {{ idx === 0 ? '●' : '○' }}
           </span>
@@ -23,7 +24,9 @@
           <div class="rounded-lg border border-gray-100 bg-gray-50 p-3 space-y-1">
             <div class="flex items-center justify-between gap-2 flex-wrap">
               <p class="text-sm font-medium text-gray-900">{{ evt.accion }}</p>
-              <time class="text-xs text-gray-400 whitespace-nowrap">{{ formatDateTime(evt.fecha_cambio) }}</time>
+              <time class="text-xs text-gray-400 whitespace-nowrap">
+                {{ formatDateTime(evt.fecha_cambio) }}
+              </time>
             </div>
 
             <div v-if="evt.estado_anterior || evt.estado_nuevo" class="flex items-center gap-2 text-xs">
@@ -37,9 +40,8 @@
             </div>
 
             <p v-if="evt.descripcion" class="text-xs text-gray-500">{{ evt.descripcion }}</p>
-
             <p class="text-xs text-gray-400">
-              Por: <span class="font-medium text-gray-600">{{ evt.usuario_nombre }}</span>
+              Por: <span class="font-medium text-gray-600">{{ evt.usuario_nombre ?? 'Sistema' }}</span>
             </p>
           </div>
         </li>
